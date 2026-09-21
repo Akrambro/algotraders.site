@@ -11,7 +11,6 @@ import {
   createRateLimiter,
   AuthenticatedRequest
 } from './src/server/auth.ts';
-import { billingService } from './src/server/billing.ts';
 import { paymentProvider } from './src/server/payments/index.ts';
 import { licensingService } from './src/server/licensing.ts';
 import { generateMySQLDump, testMySQLConnection } from './src/server/mysql.ts';
@@ -242,6 +241,111 @@ async function startServer() {
   // SUBSCRIPTION & BILLING ROUTES (Razorpay / Pluggable Provider)
   // ==========================================
 
+  // POST /api/create-order (Step 1: Create Razorpay Standard Order)
+  const createOrderHandler = async (req: Request, res: Response) => {
+    try {
+      let { amount, currency, receipt, planId, notes } = req.body;
+
+      // Check optional auth token if present
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      let authUser: any = null;
+      if (token) {
+        authUser = authService.verifyToken(token);
+      }
+
+      // Default amount from planId if raw amount not provided
+      if (!amount && planId) {
+        if (planId === 'annual') {
+          amount = 4999900; // ₹49,999 in paise
+        } else {
+          amount = 499900; // ₹4,999 in paise
+        }
+      }
+
+      // Validate minimum amount (>= 100 paise)
+      if (typeof amount !== 'number' || isNaN(amount) || amount < 100) {
+        return res.status(400).json({ error: 'Amount is required and must be at least 100 paise (₹1.00).' });
+      }
+
+      if (!paymentProvider.createOrder) {
+        return res.status(500).json({ error: 'Order creation is not supported by current payment provider.' });
+      }
+
+      const orderResult = await paymentProvider.createOrder({
+        amount,
+        currency: currency || 'INR',
+        receipt,
+        notes,
+        userId: authUser?.id,
+        email: authUser?.email,
+        planId
+      });
+
+      return res.status(200).json({
+        order_id: orderResult.order_id,
+        id: orderResult.order_id,
+        amount: orderResult.amount,
+        currency: orderResult.currency,
+        receipt: orderResult.receipt,
+        key_id: orderResult.key_id,
+        name: orderResult.name,
+        description: orderResult.description,
+        notes: orderResult.notes
+      });
+    } catch (err: any) {
+      console.error('Razorpay create-order error:', err);
+      return res.status(500).json({ error: err.message || 'Failed to create Razorpay order' });
+    }
+  };
+  app.post('/api/create-order', createOrderHandler);
+  app.post('/api/billing/create-order', createOrderHandler);
+
+  // POST /api/verify-payment (Step 3: Verify Razorpay Payment Signature)
+  const verifyPaymentHandler = async (req: Request, res: Response) => {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId, email } = req.body;
+
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required parameters: razorpay_order_id, razorpay_payment_id, and razorpay_signature are required.'
+        });
+      }
+
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      let authUser: any = null;
+      if (token) {
+        authUser = authService.verifyToken(token);
+      }
+
+      if (!paymentProvider.verifyPayment) {
+        return res.status(500).json({ success: false, error: 'Payment verification not supported by provider.' });
+      }
+
+      const result = await paymentProvider.verifyPayment({
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        userId: authUser?.id,
+        email: email || authUser?.email,
+        planId
+      });
+
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+
+      return res.status(200).json(result);
+    } catch (err: any) {
+      console.error('Razorpay verify-payment error:', err);
+      return res.status(500).json({ success: false, error: err.message || 'Internal payment verification error' });
+    }
+  };
+  app.post('/api/verify-payment', verifyPaymentHandler);
+  app.post('/api/billing/verify-payment', verifyPaymentHandler);
+
   // GET /api/billing/subscription (and alias /api/subscription)
   const getSubscriptionHandler = async (req: AuthenticatedRequest, res: Response) => {
     const sub = await db.getSubscription(req.user!.id);
@@ -313,26 +417,6 @@ async function startServer() {
     } catch (err: any) {
       console.error('Razorpay webhook processing error:', err);
       return res.status(500).json({ error: 'Razorpay webhook processing failure.' });
-    }
-  });
-
-  // POST /api/webhooks/stripe (Server-side secondary/legacy webhook support)
-  app.post('/api/webhooks/stripe', async (req: any, res: Response) => {
-    try {
-      const sig = req.headers['stripe-signature'];
-      const rawBody = req.rawBody || JSON.stringify(req.body);
-
-      const isValid = billingService.verifyWebhookSignature(rawBody, sig);
-      if (!isValid) {
-        return res.status(400).json({ error: 'Invalid webhook signature.' });
-      }
-
-      const event = req.body;
-      const result = await billingService.handleWebhookEvent(event);
-      return res.json({ received: true, ...result });
-    } catch (err: any) {
-      console.error('Stripe webhook processing error:', err);
-      return res.status(500).json({ error: 'Webhook processing failure.' });
     }
   });
 

@@ -87,7 +87,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 hover:from-cyan-300 hover:to-purple-500 text-slate-950 shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2 group cursor-pointer"
               id="hero-primary-start-trial-btn"
             >
-              <span>Start 7-Day Free Trial</span>
+              <span>Start 2-Day Free Trial</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button

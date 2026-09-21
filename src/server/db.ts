@@ -41,8 +41,6 @@ export interface SubscriptionTable {
   razorpay_subscription_id?: string;
   razorpay_customer_id?: string;
   razorpay_plan_id?: string;
-  stripe_customer_id?: string;
-  stripe_subscription_id?: string;
   current_period_start: string;
   current_period_end: string;
   cancel_at_period_end: boolean;
@@ -261,13 +259,13 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_annual_98214',
     razorpayCustomerId: 'cust_rzp_9921_alex',
-    razorpayPlanId: 'plan_QBot2Yearly470',
+    razorpayPlanId: 'plan_QBot2Yearly49999',
     currentPeriodStart: new Date(now - 30 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 335 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 3,
     paymentMethodLast4: '4242',
-    paymentMethodBrand: 'Visa / Razorpay Autopay',
+    paymentMethodBrand: 'HDFC / Razorpay UPI Autopay',
     createdAt: new Date(now - 30 * oneDayMs).toISOString()
   },
   {
@@ -278,13 +276,13 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_monthly_41290',
     razorpayCustomerId: 'cust_rzp_4129_sarah',
-    razorpayPlanId: 'plan_QBot2Monthly49',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 12 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 18 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
     paymentMethodLast4: '8811',
-    paymentMethodBrand: 'Mastercard / Razorpay Autopay',
+    paymentMethodBrand: 'ICICI / Razorpay Autopay',
     createdAt: new Date(now - 12 * oneDayMs).toISOString()
   },
   {
@@ -295,12 +293,12 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_pending_77182',
     razorpayCustomerId: 'cust_rzp_7718_rahul',
-    razorpayPlanId: 'plan_QBot2Monthly49',
-    currentPeriodStart: new Date(now - 2 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 5 * oneDayMs).toISOString(),
+    razorpayPlanId: 'plan_QBot2Monthly4999',
+    currentPeriodStart: new Date(now - 1 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 1 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
-    createdAt: new Date(now - 2 * oneDayMs).toISOString()
+    createdAt: new Date(now - 1 * oneDayMs).toISOString()
   },
   {
     id: 'sub_marcus_halted',
@@ -310,13 +308,13 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_halted_55210',
     razorpayCustomerId: 'cust_rzp_5521_marcus',
-    razorpayPlanId: 'plan_QBot2Monthly49',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 45 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now - 5 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: true,
     maxDevices: 2,
     paymentMethodLast4: '1004',
-    paymentMethodBrand: 'American Express',
+    paymentMethodBrand: 'Axis Bank Netbanking',
     createdAt: new Date(now - 45 * oneDayMs).toISOString()
   },
   {
@@ -327,7 +325,7 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_canc_33091',
     razorpayCustomerId: 'cust_rzp_3309_elena',
-    razorpayPlanId: 'plan_QBot2Monthly49',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 60 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now - 30 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: true,
@@ -340,11 +338,11 @@ const seedSubscriptions: Subscription[] = [
     planId: 'trial',
     status: 'trialing',
     provider: 'razorpay',
-    currentPeriodStart: new Date(now - 4 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 3 * oneDayMs).toISOString(),
+    currentPeriodStart: new Date(now - 1 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 1 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
-    createdAt: new Date(now - 4 * oneDayMs).toISOString()
+    createdAt: new Date(now - 1 * oneDayMs).toISOString()
   },
   {
     id: 'sub_priya_annual',
@@ -354,7 +352,7 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_priya_ann_7701',
     razorpayCustomerId: 'cust_rzp_priya_99',
-    razorpayPlanId: 'plan_QBot2Yearly470',
+    razorpayPlanId: 'plan_QBot2Yearly49999',
     currentPeriodStart: new Date(now - 40 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 325 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
@@ -371,13 +369,13 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_carlos_mo_2210',
     razorpayCustomerId: 'cust_rzp_carlos_77',
-    razorpayPlanId: 'plan_QBot2Monthly49',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 35 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now - 2 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
     paymentMethodLast4: '3310',
-    paymentMethodBrand: 'Santander / Visa',
+    paymentMethodBrand: 'SBI Netbanking',
     createdAt: new Date(now - 35 * oneDayMs).toISOString()
   },
   {
@@ -388,13 +386,13 @@ const seedSubscriptions: Subscription[] = [
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_james_mo_8820',
     razorpayCustomerId: 'cust_rzp_james_12',
-    razorpayPlanId: 'plan_QBot2Monthly49',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 50 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 10 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
     paymentMethodLast4: '9002',
-    paymentMethodBrand: 'Chase / Mastercard',
+    paymentMethodBrand: 'Kotak Mahindra Card',
     createdAt: new Date(now - 50 * oneDayMs).toISOString()
   }
 ];
@@ -504,8 +502,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_annual_init_01',
     providerOrderId: 'order_rzp_ann_01',
-    amount: 470,
-    currency: 'USD',
+    amount: 49999,
+    currency: 'INR',
     status: 'captured',
     method: 'upi_autopay',
     createdAt: new Date(now - 30 * oneDayMs).toISOString()
@@ -517,8 +515,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_priya_captured_99',
     providerOrderId: 'order_rzp_priya_ann',
-    amount: 470,
-    currency: 'USD',
+    amount: 49999,
+    currency: 'INR',
     status: 'captured',
     method: 'upi_autopay',
     createdAt: new Date(now - 40 * oneDayMs).toISOString()
@@ -530,8 +528,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_carlos_fail_01',
     providerOrderId: 'order_rzp_carlos_retry',
-    amount: 49,
-    currency: 'USD',
+    amount: 4999,
+    currency: 'INR',
     status: 'failed',
     method: 'card',
     errorCode: 'PAYMENT_EXPIRED_CARD',
@@ -545,8 +543,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_sarah_01',
     providerOrderId: 'order_rzp_sarah_01',
-    amount: 49,
-    currency: 'USD',
+    amount: 4999,
+    currency: 'INR',
     status: 'captured',
     method: 'card',
     createdAt: new Date(now - 12 * oneDayMs).toISOString()
@@ -558,8 +556,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_marcus_failed_02',
     providerOrderId: 'order_rzp_marcus_02',
-    amount: 49,
-    currency: 'USD',
+    amount: 4999,
+    currency: 'INR',
     status: 'failed',
     method: 'card',
     errorCode: 'BAD_REQUEST_PAYMENT_DECLINED',
@@ -573,8 +571,8 @@ const seedTransactions: PaymentTransaction[] = [
     provider: 'razorpay',
     providerPaymentId: 'pay_rzp_elena_orig',
     providerOrderId: 'rfnd_rzp_elena_01',
-    amount: 49,
-    currency: 'USD',
+    amount: 4999,
+    currency: 'INR',
     status: 'refunded',
     method: 'card',
     errorDescription: 'Full satisfaction guarantee refund processed within 30 days',
@@ -599,7 +597,7 @@ const seedWebhookEvents: WebhookEventLog[] = [
     eventType: 'subscription.activated',
     status: 'processed',
     processedAt: new Date(now - 30 * oneDayMs).toISOString(),
-    summary: 'Processed Razorpay subscription.activated for Alex Vance ($470 Annual Pro)'
+    summary: 'Processed Razorpay subscription.activated for Alex Vance (₹49,999 Annual Plan)'
   },
   {
     id: 'wh_evt_002',
@@ -607,7 +605,7 @@ const seedWebhookEvents: WebhookEventLog[] = [
     eventType: 'subscription.charged',
     status: 'processed',
     processedAt: new Date(now - 12 * oneDayMs).toISOString(),
-    summary: 'Processed subscription.charged for Sarah Connor (Recurring $49.00 captured)'
+    summary: 'Processed subscription.charged for Sarah Connor (Recurring ₹4,999 captured)'
   },
   {
     id: 'wh_evt_003',
@@ -639,7 +637,7 @@ const seedWebhookEvents: WebhookEventLog[] = [
     eventType: 'payment.failed',
     status: 'processed',
     processedAt: new Date(now - 5 * oneDayMs).toISOString(),
-    summary: 'Processed payment.failed for Marcus Brody ($49 card payment declined: insufficient funds)'
+    summary: 'Processed payment.failed for Marcus Brody (₹4,999 card payment declined: insufficient funds)'
   },
   {
     id: 'wh_evt_007',
@@ -647,7 +645,7 @@ const seedWebhookEvents: WebhookEventLog[] = [
     eventType: 'refund.created',
     status: 'processed',
     processedAt: new Date(now - 30 * oneDayMs).toISOString(),
-    summary: 'Processed refund.created for Elena Rostova ($49.00 refunded under money-back guarantee)'
+    summary: 'Processed refund.created for Elena Rostova (₹4,999.00 refunded under money-back guarantee)'
   }
 ];
 
@@ -723,7 +721,7 @@ export const db = {
     };
     memoryStore.users.set(id, user);
 
-    // Default 7-day trial subscription via Razorpay
+    // Default 2-day trial subscription via Razorpay
     const trialSub: Subscription = {
       id: 'sub_' + Math.random().toString(36).substring(2, 10),
       userId: id,
@@ -731,7 +729,7 @@ export const db = {
       status: 'trialing',
       provider: 'razorpay',
       currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + 7 * oneDayMs).toISOString(),
+      currentPeriodEnd: new Date(Date.now() + 2 * oneDayMs).toISOString(),
       cancelAtPeriodEnd: false,
       maxDevices: 2,
       createdAt: new Date().toISOString()
@@ -1042,8 +1040,8 @@ export const db = {
     for (const s of memoryStore.subscriptions.values()) {
       if (s.status === 'active') {
         activeSubscriptions++;
-        if (s.planId === 'monthly') mrr += 49;
-        if (s.planId === 'annual') mrr += Math.round(470 / 12);
+        if (s.planId === 'monthly') mrr += 4999;
+        if (s.planId === 'annual') mrr += Math.round(49999 / 12);
       } else if (s.status === 'trialing' || s.status === 'pending') {
         trialUsers++;
       } else if (s.status === 'expired' || s.status === 'canceled') {

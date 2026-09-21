@@ -36,12 +36,62 @@ export interface CustomerPortalResult {
   mode?: string;
 }
 
+export interface CreateOrderParams {
+  amount: number; // in paise
+  currency?: string;
+  receipt?: string;
+  notes?: Record<string, string>;
+  userId?: string;
+  email?: string;
+  planId?: 'monthly' | 'annual';
+}
+
+export interface CreateOrderResult {
+  order_id: string;
+  id: string;
+  amount: number;
+  currency: string;
+  receipt?: string;
+  key_id?: string;
+  status?: string;
+  name?: string;
+  description?: string;
+  notes?: Record<string, string>;
+}
+
+export interface VerifyPaymentParams {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  userId?: string;
+  email?: string;
+  planId?: 'monthly' | 'annual';
+}
+
+export interface VerifyPaymentResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  payment_id?: string;
+  order_id?: string;
+}
+
 /**
  * Pluggable Payment Provider Interface.
- * Allows effortless swapping between Razorpay, Cashfree, Stripe, or any other recurring billing gateway.
+ * Allows effortless swapping between Razorpay, Cashfree, or any other recurring billing gateway.
  */
 export interface PaymentProvider {
   readonly name: PaymentProviderType;
+
+  /**
+   * Creates a standard Razorpay/gateway order for frontend checkout.
+   */
+  createOrder?(params: CreateOrderParams): Promise<CreateOrderResult>;
+
+  /**
+   * Verifies payment signature returned by frontend modal.
+   */
+  verifyPayment?(params: VerifyPaymentParams): Promise<VerifyPaymentResult>;
 
   /**
    * Creates a recurring subscription or checkout session for a customer.

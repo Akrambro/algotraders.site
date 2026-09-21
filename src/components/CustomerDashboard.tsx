@@ -276,7 +276,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           </div>
         )}
 
-        {/* State 2: Active 7-Day Trial */}
+        {/* State 2: Active 2-Day Trial */}
         {isTrial && (
           <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
@@ -286,7 +286,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                    7-Day Free Trial Active
+                    2-Day Free Trial Active
                   </span>
                   <span className="text-[11px] px-2 py-0.2 rounded bg-cyan-900/60 text-cyan-200 font-mono">
                     TRIALING
@@ -297,7 +297,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   <span className="text-white font-semibold">
                     {subscription?.currentPeriodEnd
                       ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                      : '7 days from registration'}
+                      : '2 days from registration'}
                   </span>
                   . Upgrade anytime to trade real capital.
                 </div>
@@ -307,7 +307,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               onClick={onGoToPricing}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 shrink-0 shadow-md shadow-cyan-500/20"
             >
-              Upgrade to Pro Plan
+              Upgrade to Paid Plan
             </button>
           </div>
         )}

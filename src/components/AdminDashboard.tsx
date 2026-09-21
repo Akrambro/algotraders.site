@@ -361,7 +361,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
-          <div className="text-[11px] text-slate-400">7-Day Trials</div>
+          <div className="text-[11px] text-slate-400">2-Day Trials</div>
           <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
             {metrics?.trialUsers ?? '...'}
           </div>
@@ -377,7 +377,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Monthly Run Rate</div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
-            {metrics?.mrr ? `$${metrics.mrr}` : '$2,450'}
+            {metrics?.mrr ? `₹${Number(metrics.mrr).toLocaleString('en-IN')}` : '₹49,999'}
           </div>
         </div>
 

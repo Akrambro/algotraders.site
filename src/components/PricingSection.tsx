@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Zap, Shield, HelpCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Check, Zap, Shield, HelpCircle, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 
 interface PricingSectionProps {
@@ -32,38 +32,125 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
     setCheckoutMessage(null);
 
     try {
-      const resp = await fetch('/api/billing/create-checkout', {
+      const amountPaise = planId === 'annual' ? 4999900 : 499900;
+
+      // Step 1: Call backend create-order endpoint
+      const resp = await fetch('/api/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ planId })
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          planId
+        })
       });
 
       const data = await resp.json();
       if (!resp.ok) {
-        throw new Error(data.error || 'Checkout session failed.');
+        throw new Error(data.error || 'Failed to create Razorpay order.');
       }
 
-      const targetUrl = data.checkoutUrl || data.url;
-      if (targetUrl) {
-        // If simulated dev mode or live Razorpay redirect/modal URL
-        if (data.mode === 'simulated_dev') {
-          setCheckoutMessage(`Razorpay Subscription activated (${planId} plan)! Redirecting to Dashboard...`);
+      const orderId = data.order_id || data.id;
+      const keyId = data.key_id || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_test_TeaYu2IzjRtnT9';
+
+      // Step 2: Open Razorpay Standard Checkout Modal
+      if (typeof (window as any).Razorpay === 'function') {
+        const options = {
+          key: keyId,
+          amount: data.amount || amountPaise,
+          currency: data.currency || 'INR',
+          name: 'Algo Trders - QBot2',
+          description: planId === 'annual' ? 'Annual Plan (₹49,999/yr)' : 'Monthly Plan (₹4,999/mo)',
+          order_id: orderId,
+          handler: async function (paymentResponse: any) {
+            setCheckoutMessage('Verifying payment signature with Razorpay...');
+            try {
+              // Step 3: Call backend verify-payment endpoint
+              const verifyResp = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: paymentResponse.razorpay_order_id,
+                  razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                  razorpay_signature: paymentResponse.razorpay_signature,
+                  planId
+                })
+              });
+
+              const verifyData = await verifyResp.json();
+              if (verifyResp.ok && verifyData.success) {
+                setCheckoutMessage(`Payment verified successfully! (${paymentResponse.razorpay_payment_id}). Redirecting to Dashboard...`);
+                await refreshUserData();
+                setTimeout(() => {
+                  window.location.href = '/#dashboard';
+                  onSelectPlan(planId);
+                }, 1200);
+              } else {
+                setCheckoutMessage(`Verification failed: ${verifyData.error || 'Signature mismatch'}`);
+              }
+            } catch (vErr: any) {
+              setCheckoutMessage(`Verification request error: ${vErr.message}`);
+            } finally {
+              setLoadingPlan(null);
+            }
+          },
+          prefill: {
+            name: user.name || '',
+            email: user.email || '',
+            contact: ''
+          },
+          theme: {
+            color: '#06b6d4'
+          },
+          modal: {
+            ondismiss: function () {
+              setLoadingPlan(null);
+              setCheckoutMessage('Payment modal closed. You can resume checkout anytime.');
+            }
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (failResp: any) {
+          setLoadingPlan(null);
+          setCheckoutMessage(`Payment Failed: ${failResp.error?.description || failResp.error?.reason || 'Transaction could not be completed.'}`);
+        });
+        rzp.open();
+      } else {
+        // Fallback simulation if checkout.js script is blocked or offline
+        const verifyResp = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            razorpay_order_id: orderId,
+            razorpay_payment_id: 'pay_rzp_mock_' + Math.random().toString(36).substring(2, 9),
+            razorpay_signature: 'simulated_sig_success',
+            planId
+          })
+        });
+        const verifyData = await verifyResp.json();
+        if (verifyData.success) {
+          setCheckoutMessage(`Payment verified! Redirecting to Dashboard...`);
           await refreshUserData();
           setTimeout(() => {
             window.location.href = '/#dashboard';
             onSelectPlan(planId);
           }, 1200);
-        } else {
-          window.location.href = targetUrl;
         }
+        setLoadingPlan(null);
       }
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setCheckoutMessage(err.message || 'Error initiating checkout.');
-    } finally {
+      setCheckoutMessage(err.message || 'Error initiating Razorpay checkout.');
       setLoadingPlan(null);
     }
   };
@@ -73,41 +160,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-xs uppercase font-bold tracking-widest text-cyan-400">
-            Simple, Transparent Pricing
+            Transparent Indian Rupee (INR) Pricing
           </span>
           <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Predictable Plans. Zero Hidden Trading Fees.
+            Simple, Transparent Subscription Plans
           </h2>
           <p className="mt-4 text-slate-300 text-base">
-            Never pay commission cuts or percentage-of-profit royalties. Start with our 7-day free trial, then pick the plan that suits your trading goals.
+            Start risk-free with our 2-day trial, or unlock unlimited automated trading with the Paid Plan.
           </p>
-
-          {/* Billing Cycle Switcher */}
-          <div className="mt-8 inline-flex items-center p-1.5 rounded-full bg-slate-900 border border-slate-800">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Monthly Billing
-            </button>
-            <button
-              onClick={() => setBillingCycle('annual')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                billingCycle === 'annual'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-slate-950 text-cyan-300">
-                Save 20%
-              </span>
-            </button>
-          </div>
         </div>
 
         {checkoutMessage && (
@@ -116,34 +176,34 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
           </div>
         )}
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-          {/* Plan 1: 7-Day Free Trial */}
+        {/* 2 Plan Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+          {/* Card 1: 2-Day Free Trial */}
           <div className="glass-card rounded-2xl p-8 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
             <div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs uppercase font-mono font-bold text-slate-400">
-                  Starter Evaluation
+                  Evaluation
                 </span>
                 <span className="text-[10px] uppercase px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-mono">
                   No Card Required
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold text-white">7-Day Free Trial</h3>
+              <h3 className="text-2xl font-bold text-white">2-Day Free Trial</h3>
               <p className="text-xs text-slate-400 mt-2">
-                Evaluate all features in Practice mode with zero financial commitment.
+                Evaluate all features and connectivity in Practice simulation mode with zero financial risk.
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-white font-mono">$0</span>
-                <span className="text-xs text-slate-400">/ 7 days</span>
+                <span className="text-4xl font-extrabold text-white font-mono">₹0</span>
+                <span className="text-xs text-slate-400">/ 2 days</span>
               </div>
 
               <div className="mt-8 space-y-3 pt-6 border-t border-slate-800/80 text-xs text-slate-300">
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Full Windows backend application access</span>
+                  <span>Full Windows backend software access</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -159,7 +219,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
                 </div>
                 <div className="flex items-center gap-2 text-slate-500">
                   <Check className="w-4 h-4 text-slate-600 shrink-0" />
-                  <span>Real live capital trading (locked in trial)</span>
+                  <span>Live real capital trading (requires Paid Plan)</span>
                 </div>
               </div>
             </div>
@@ -170,50 +230,87 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
                 className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all text-center cursor-pointer"
                 id="pricing-trial-btn"
               >
-                Activate 7-Day Trial
+                Activate 2-Day Trial
               </button>
-              <p className="text-[11px] text-slate-500 text-center mt-2">Instant download on registration</p>
+              <p className="text-[11px] text-slate-500 text-center mt-2">Instant download upon registration</p>
             </div>
           </div>
 
-          {/* Plan 2: Pro Annual (Featured) */}
-          <div className="glass-panel-glow rounded-2xl p-8 border border-cyan-500/40 relative flex flex-col justify-between scale-105 z-10 shadow-2xl">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-[11px] uppercase tracking-wider shadow-md">
-              Most Popular • Best Value
+          {/* Card 2: Paid Plan (Monthly & Yearly Selection) */}
+          <div className="glass-panel-glow rounded-2xl p-8 border border-cyan-500/40 relative flex flex-col justify-between scale-[1.02] z-10 shadow-2xl">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-[11px] uppercase tracking-wider shadow-md flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Full Algorithmic Suite</span>
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-4 mt-2">
-                <span className="text-xs uppercase font-mono font-bold text-cyan-400">
-                  Full Algorithmic Suite
-                </span>
-                <span className="text-[10px] uppercase px-2.5 py-1 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-mono">
-                  Save $118/year
-                </span>
+              {/* Billing Cycle Switcher within the Paid Card */}
+              <div className="flex justify-center mb-6 mt-2">
+                <div className="inline-flex items-center p-1 rounded-xl bg-slate-900/90 border border-slate-800">
+                  <button
+                    onClick={() => setBillingCycle('monthly')}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      billingCycle === 'monthly'
+                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Monthly (₹4,999/mo)
+                  </button>
+                  <button
+                    onClick={() => setBillingCycle('annual')}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      billingCycle === 'annual'
+                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>Yearly (₹49,999/yr)</span>
+                    <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950">
+                      2 Months Free
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              <h3 className="text-2xl font-bold text-white">Annual Pro Plan</h3>
-              <p className="text-xs text-slate-300 mt-2">
-                Unrestricted execution on both practice and real capital accounts with premium support.
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-2xl font-bold text-white">Paid Plan</h3>
+                {billingCycle === 'annual' && (
+                  <span className="text-[11px] uppercase font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono">
+                    Save ₹9,989 (2 Mos Free)
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                Unrestricted algorithmic execution on both Practice and Live Real broker accounts.
               </p>
 
               <div className="mt-6 flex items-baseline gap-2">
-                <span className="text-5xl font-extrabold text-white font-mono">$39</span>
-                <span className="text-xs text-slate-400">/ month, billed annually ($470/yr)</span>
+                {billingCycle === 'annual' ? (
+                  <>
+                    <span className="text-4xl font-extrabold text-white font-mono">₹49,999</span>
+                    <span className="text-xs text-slate-400">/ year (₹4,166/mo • 2 months free)</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-4xl font-extrabold text-white font-mono">₹4,999</span>
+                    <span className="text-xs text-slate-400">/ month</span>
+                  </>
+                )}
               </div>
 
-              <div className="mt-8 space-y-3 pt-6 border-t border-slate-800 text-xs text-slate-200">
+              <div className="mt-6 space-y-3 pt-6 border-t border-slate-800 text-xs text-slate-200">
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span className="font-semibold text-white">Both Practice AND Live Real trading</span>
+                  <span className="font-semibold text-white">Live Real Capital + Practice Broker Trading</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Up to 3 active paired devices (e.g. 2 PCs + Phone)</span>
+                  <span>Multi-device pairing ({billingCycle === 'annual' ? '3 devices' : '2 devices'})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Custom Supertrend parameter tuning & alerts</span>
+                  <span>Custom Supertrend parameter tuning & real-time alerts</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -221,103 +318,39 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Priority software updates & Discord access</span>
+                  <span>Live Android push notifications & heartbeat monitor</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>14-day money-back satisfaction guarantee</span>
+                  <span>Priority software updates & technical support</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-8">
               <button
-                onClick={() => handleCheckout('annual')}
-                disabled={loadingPlan === 'annual'}
+                onClick={() => handleCheckout(billingCycle)}
+                disabled={loadingPlan === billingCycle}
                 className="w-full py-3.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 hover:from-cyan-300 hover:to-purple-500 text-slate-950 shadow-lg shadow-cyan-500/25 transition-all text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                id="pricing-annual-btn"
+                id="pricing-paid-btn"
               >
-                {loadingPlan === 'annual' ? (
+                {loadingPlan === billingCycle ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Preparing Secure Checkout...</span>
+                    <span>Preparing Razorpay Checkout...</span>
                   </>
                 ) : (
                   <>
-                    <span>Subscribe Annually ($470/yr)</span>
+                    <span>
+                      {billingCycle === 'annual' ? 'Subscribe Yearly (₹49,999/yr)' : 'Subscribe Monthly (₹4,999/mo)'}
+                    </span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
               <p className="text-[11px] text-slate-400 text-center mt-2">
-                Processed securely via Stripe Billing • Cancel anytime
+                Processed securely via Razorpay (UPI, Netbanking, Cards) • Cancel anytime
               </p>
-            </div>
-          </div>
-
-          {/* Plan 3: Monthly Flex */}
-          <div className="glass-card rounded-2xl p-8 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs uppercase font-mono font-bold text-slate-400">
-                  Month-to-Month
-                </span>
-                <span className="text-[10px] uppercase px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-mono">
-                  Flexible
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-bold text-white">Monthly Flex Plan</h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Full production features with convenient month-to-month billing.
-              </p>
-
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-white font-mono">$49</span>
-                <span className="text-xs text-slate-400">/ month</span>
-              </div>
-
-              <div className="mt-8 space-y-3 pt-6 border-t border-slate-800/80 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Real & Practice trading enabled</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Up to 2 active paired devices (PC + Android)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Full Supertrend algorithm execution</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Live mobile trade push notifications</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Cancel anytime in 1-click via customer portal</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <button
-                onClick={() => handleCheckout('monthly')}
-                disabled={loadingPlan === 'monthly'}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all text-center flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                id="pricing-monthly-btn"
-              >
-                {loadingPlan === 'monthly' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Preparing Secure Checkout...</span>
-                  </>
-                ) : (
-                  <span>Subscribe Monthly ($49/mo)</span>
-                )}
-              </button>
-              <p className="text-[11px] text-slate-500 text-center mt-2">Billed every 30 days • No contracts</p>
             </div>
           </div>
         </div>

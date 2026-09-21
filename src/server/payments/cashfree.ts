@@ -34,7 +34,7 @@ export class CashfreeProvider implements PaymentProvider {
 
   async createSubscription(params: CreateCheckoutParams): Promise<CheckoutSessionResult> {
     const { userId, email, planId } = params;
-    const amount = planId === 'annual' ? 470 : 49;
+    const amount = planId === 'annual' ? 49999 : 4999;
     const subId = 'sub_cf_' + crypto.randomBytes(8).toString('hex');
 
     // When Cashfree Subscriptions API credentials are provided:
@@ -52,7 +52,7 @@ export class CashfreeProvider implements PaymentProvider {
           body: JSON.stringify({
             order_id: subId,
             order_amount: amount,
-            order_currency: 'USD',
+            order_currency: 'INR',
             customer_details: {
               customer_id: userId,
               customer_email: email
@@ -70,9 +70,9 @@ export class CashfreeProvider implements PaymentProvider {
           keyId: this.appId,
           planId,
           amount: amount * 100,
-          currency: 'USD',
+          currency: 'INR',
           name: 'QBot2 Trading Platform',
-          description: `${planId} Subscription (Cashfree)`,
+          description: `${planId === 'annual' ? 'Annual (₹49,999/yr)' : 'Monthly (₹4,999/mo)'} Subscription (Cashfree)`,
           notes: { userId, planId, email },
           mode: 'live'
         };
@@ -98,9 +98,9 @@ export class CashfreeProvider implements PaymentProvider {
       keyId: this.appId || 'cf_test_simulated',
       planId,
       amount: amount * 100,
-      currency: 'USD',
+      currency: 'INR',
       name: 'QBot2 Trading Platform',
-      description: `${planId} Subscription (Cashfree)`,
+      description: `${planId === 'annual' ? 'Annual (₹49,999/yr)' : 'Monthly (₹4,999/mo)'} Subscription (Cashfree)`,
       notes: { userId, planId, email },
       mode: 'simulated_dev'
     };

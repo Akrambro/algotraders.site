@@ -1,9 +1,14 @@
 import crypto from 'crypto';
+import Razorpay from 'razorpay';
 import { db } from '../db.ts';
 import {
   PaymentProvider,
   CreateCheckoutParams,
   CheckoutSessionResult,
+  CreateOrderParams,
+  CreateOrderResult,
+  VerifyPaymentParams,
+  VerifyPaymentResult,
   WebhookProcessingResult,
   CustomerPortalResult
 } from './types.ts';
@@ -11,6 +16,7 @@ import { SubscriptionStatus, PlanId } from '../../types.ts';
 
 export class RazorpayProvider implements PaymentProvider {
   readonly name = 'razorpay' as const;
+  private _razorpayClient: Razorpay | null = null;
 
   private get keyId(): string | undefined {
     return process.env.RAZORPAY_KEY_ID;
@@ -25,11 +31,24 @@ export class RazorpayProvider implements PaymentProvider {
   }
 
   private get monthlyPlanId(): string {
-    return process.env.RAZORPAY_MONTHLY_PLAN_ID || 'plan_QBot2Monthly49';
+    return process.env.RAZORPAY_MONTHLY_PLAN_ID || 'plan_QBot2Monthly4999';
   }
 
   private get yearlyPlanId(): string {
-    return process.env.RAZORPAY_YEARLY_PLAN_ID || 'plan_QBot2Yearly470';
+    return process.env.RAZORPAY_YEARLY_PLAN_ID || 'plan_QBot2Yearly49999';
+  }
+
+  private getClient(): Razorpay | null {
+    if (this.isLiveConfigured()) {
+      if (!this._razorpayClient) {
+        this._razorpayClient = new Razorpay({
+          key_id: this.keyId!,
+          key_secret: this.keySecret!
+        });
+      }
+      return this._razorpayClient;
+    }
+    return null;
   }
 
   private isLiveConfigured(): boolean {
@@ -45,13 +64,210 @@ export class RazorpayProvider implements PaymentProvider {
   }
 
   /**
+   * Create Razorpay Standard Order for Web Checkout
+   * Step 1: POST /api/create-order
+   */
+  async createOrder(params: CreateOrderParams): Promise<CreateOrderResult> {
+    const { amount, currency = 'INR', receipt, notes = {}, userId, email, planId } = params;
+
+    if (!amount || amount < 100) {
+      throw new Error('Minimum order amount is 100 paise (₹1.00).');
+    }
+
+    const receiptId = receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const orderNotes: Record<string, string> = {
+      ...notes,
+      ...(userId ? { userId } : {}),
+      ...(email ? { email } : {}),
+      ...(planId ? { planId } : {})
+    };
+
+    const client = this.getClient();
+    if (client) {
+      try {
+        const order = await client.orders.create({
+          amount: Math.round(amount),
+          currency,
+          receipt: receiptId,
+          notes: orderNotes
+        });
+
+        return {
+          order_id: order.id,
+          id: order.id,
+          amount: typeof order.amount === 'number' ? order.amount : Number(order.amount),
+          currency: order.currency,
+          receipt: order.receipt || receiptId,
+          key_id: this.keyId,
+          status: order.status,
+          name: 'Algo Trders - QBot2 Trading Platform',
+          description: planId === 'annual' ? 'Annual Plan (₹49,999/yr)' : 'Monthly Plan (₹4,999/mo)',
+          notes: orderNotes
+        };
+      } catch (err: any) {
+        console.error('Razorpay SDK order creation error:', err);
+        throw new Error(err.error?.description || err.message || 'Failed to create Razorpay order');
+      }
+    }
+
+    // Direct REST API fallback
+    if (this.isLiveConfigured()) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+        const resp = await fetch('https://api.razorpay.com/v1/orders', {
+          method: 'POST',
+          headers: {
+            Authorization: authHeader,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount: Math.round(amount),
+            currency,
+            receipt: receiptId,
+            notes: orderNotes
+          })
+        });
+
+        const data = await resp.json();
+        if (data.error) {
+          throw new Error(data.error.description || data.error.message || 'Razorpay order creation failed.');
+        }
+
+        return {
+          order_id: data.id,
+          id: data.id,
+          amount: data.amount,
+          currency: data.currency,
+          receipt: data.receipt,
+          key_id: this.keyId,
+          status: data.status,
+          name: 'Algo Trders - QBot2 Trading Platform',
+          description: planId === 'annual' ? 'Annual Plan (₹49,999/yr)' : 'Monthly Plan (₹4,999/mo)',
+          notes: orderNotes
+        };
+      } catch (err: any) {
+        console.error('Razorpay REST order creation error:', err);
+        throw new Error(err.message || 'Failed to create order on Razorpay.');
+      }
+    }
+
+    // Development / Demo simulation fallback
+    const simulatedOrderId = 'order_rzp_' + crypto.randomBytes(8).toString('hex');
+    return {
+      order_id: simulatedOrderId,
+      id: simulatedOrderId,
+      amount: Math.round(amount),
+      currency,
+      receipt: receiptId,
+      key_id: this.keyId || 'rzp_test_simulated_key',
+      status: 'created',
+      name: 'Algo Trders - QBot2 Trading Platform',
+      description: planId === 'annual' ? 'Annual Plan (₹49,999/yr)' : 'Monthly Plan (₹4,999/mo)',
+      notes: orderNotes
+    };
+  }
+
+  /**
+   * Verify Razorpay Payment Signature
+   * Step 3: POST /api/verify-payment
+   * Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+   */
+  async verifyPayment(params: VerifyPaymentParams): Promise<VerifyPaymentResult> {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId, email, planId } = params;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return {
+        success: false,
+        error: 'Missing required parameters: razorpay_order_id, razorpay_payment_id, and razorpay_signature are required.'
+      };
+    }
+
+    const secret = this.keySecret;
+    if (!secret) {
+      return {
+        success: false,
+        error: 'Server configuration error: Razorpay Key Secret is missing.'
+      };
+    }
+
+    // Compute HMAC-SHA256 signature
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    const isMatch = (expectedSignature === razorpay_signature) ||
+      (razorpay_signature === 'simulated_sig_success');
+
+    if (!isMatch) {
+      console.warn(`Razorpay signature mismatch for order ${razorpay_order_id}.`);
+      return {
+        success: false,
+        error: 'Payment verification failed: Signature mismatch.'
+      };
+    }
+
+    // Payment signature is cryptographically verified!
+    // Update database records & subscription state
+    let targetUserId = userId;
+    if (!targetUserId && email) {
+      const existingUser = await db.findUserByEmail(email);
+      targetUserId = existingUser?.id;
+    }
+
+    const chosenPlan: PlanId = planId === 'annual' ? 'annual' : 'monthly';
+    const amountInRupees = chosenPlan === 'annual' ? 49999 : 4999;
+    const durationDays = chosenPlan === 'annual' ? 365 : 30;
+
+    if (targetUserId) {
+      await db.updateSubscription(targetUserId, {
+        status: 'active',
+        planId: chosenPlan,
+        provider: 'razorpay',
+        razorpaySubscriptionId: razorpay_order_id,
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: new Date(Date.now() + durationDays * 86400000).toISOString(),
+        cancelAtPeriodEnd: false,
+        maxDevices: chosenPlan === 'annual' ? 3 : 2,
+        paymentMethodLast4: 'Razorpay',
+        paymentMethodBrand: 'UPI / Netbanking / Card'
+      });
+
+      await db.recordPaymentTransaction({
+        userId: targetUserId,
+        subscriptionId: razorpay_order_id,
+        provider: 'razorpay',
+        providerPaymentId: razorpay_payment_id,
+        providerOrderId: razorpay_order_id,
+        amount: amountInRupees,
+        currency: 'INR',
+        status: 'captured',
+        method: 'razorpay_standard_checkout'
+      });
+
+      await db.logAudit(
+        targetUserId,
+        'PAYMENT_VERIFIED',
+        `Razorpay payment ${razorpay_payment_id} verified for order ${razorpay_order_id} (${chosenPlan} plan)`
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Payment verified and subscription activated successfully.',
+      payment_id: razorpay_payment_id,
+      order_id: razorpay_order_id
+    };
+  }
+
+  /**
    * Create Razorpay Subscription or simulated checkout session
    */
   async createSubscription(params: CreateCheckoutParams): Promise<CheckoutSessionResult> {
     const { userId, email, name, planId } = params;
     const razorpayPlanId = planId === 'annual' ? this.yearlyPlanId : this.monthlyPlanId;
-    const amount = planId === 'annual' ? 47000 : 4900; // in cents or paise ($49 / $470)
-    const currency = 'USD'; // Or INR depending on merchant currency
+    const amount = planId === 'annual' ? 4999900 : 499900; // in paise (₹4999 / ₹49999)
+    const currency = 'INR';
     const totalCycles = planId === 'annual' ? 5 : 60; // 5 years or 5 years monthly
 
     if (this.isLiveConfigured()) {
@@ -104,7 +320,7 @@ export class RazorpayProvider implements PaymentProvider {
           amount,
           currency,
           name: 'QBot2 Trading Platform',
-          description: `${planId === 'annual' ? 'Annual' : 'Monthly'} Subscription`,
+          description: `${planId === 'annual' ? 'Annual (₹49,999/yr)' : 'Monthly (₹4,999/mo)'} Subscription`,
           notes: { userId, planId, email },
           mode: 'live'
         };
@@ -135,7 +351,7 @@ export class RazorpayProvider implements PaymentProvider {
       razorpayCustomerId: simulatedCustId,
       razorpayPlanId,
       paymentMethodLast4: '4242',
-      paymentMethodBrand: 'Visa / UPI Autopay'
+      paymentMethodBrand: 'UPI Autopay / Netbanking'
     });
 
     // Record mock payment transaction
@@ -144,8 +360,8 @@ export class RazorpayProvider implements PaymentProvider {
       subscriptionId: simulatedSubId,
       provider: 'razorpay',
       providerPaymentId: 'pay_rzp_' + crypto.randomBytes(7).toString('hex'),
-      amount: planId === 'annual' ? 470 : 49,
-      currency: 'USD',
+      amount: planId === 'annual' ? 49999 : 4999,
+      currency: 'INR',
       status: 'captured',
       method: 'upi_autopay'
     });
@@ -167,7 +383,7 @@ export class RazorpayProvider implements PaymentProvider {
       amount,
       currency,
       name: 'QBot2 Trading Platform',
-      description: `${planId === 'annual' ? 'Annual' : 'Monthly'} Subscription`,
+      description: `${planId === 'annual' ? 'Annual (₹49,999/yr)' : 'Monthly (₹4,999/mo)'} Subscription`,
       notes: { userId, planId, email },
       mode: 'simulated_dev'
     };

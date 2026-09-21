@@ -13,7 +13,7 @@ export type SubscriptionStatus =
 
 export type PlanId = 'trial' | 'monthly' | 'annual';
 
-export type PaymentProviderType = 'razorpay' | 'cashfree' | 'stripe';
+export type PaymentProviderType = 'razorpay' | 'cashfree';
 
 export interface User {
   id: string;
@@ -39,8 +39,6 @@ export interface Subscription {
   razorpaySubscriptionId?: string;
   razorpayCustomerId?: string;
   razorpayPlanId?: string;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
   paymentMethodLast4?: string;
   paymentMethodBrand?: string;
   createdAt?: string;
