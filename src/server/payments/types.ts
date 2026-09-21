@@ -57,6 +57,9 @@ export interface CreateOrderResult {
   name?: string;
   description?: string;
   notes?: Record<string, string>;
+  isSimulated?: boolean;
+  authError?: string;
+  mode?: string;
 }
 
 export interface VerifyPaymentParams {
