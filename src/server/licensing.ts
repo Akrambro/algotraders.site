@@ -2,8 +2,8 @@ import crypto from 'crypto';
 import { db } from './db.ts';
 import { LicenseValidationResponse, DownloadItem } from '../types.ts';
 
-const APP_DOWNLOAD_URL = process.env.APP_DOWNLOAD_URL || 'https://releases.algotrders.site/qbot2-windows-latest.zip';
-const APK_DOWNLOAD_URL = process.env.APK_DOWNLOAD_URL || 'https://releases.algotrders.site/qbot2-android-v2.1.0.apk';
+const APP_DOWNLOAD_URL = process.env.APP_DOWNLOAD_URL || 'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg5OTY5NDAwLCJleHAiOjE5NDc2NDk0MDB9.bg0k2noEcK2K5W1KPeEZN1l3IEjMeXJdro8aifxoK3iPDjrDTRg6ggpx7EjdRWPuXOqxzmE3ubB2okq9fOd0fg';
+const APK_DOWNLOAD_URL = process.env.APK_DOWNLOAD_URL || 'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o';
 const JWT_SECRET = process.env.JWT_SECRET || 'algotrders_qbot2_production_secret_key_2026';
 
 export const licensingService = {

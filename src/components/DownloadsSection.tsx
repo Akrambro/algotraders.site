@@ -143,11 +143,14 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
           <div className="mt-6 pt-4 border-t border-slate-800">
             {hasEntitlement ? (
               <a
-                href={downloads?.windows?.url || '#'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Initiating download: qbot2-windows-backend-v2.4.1.zip (Authorized by licensing token).');
-                }}
+                href={
+                  downloads?.downloads?.find((d: any) => d.platform === 'windows')?.downloadUrl ||
+                  downloads?.windows?.url ||
+                  'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg5OTY5NDAwLCJleHAiOjE5NDc2NDk0MDB9.bg0k2noEcK2K5W1KPeEZN1l3IEjMeXJdro8aifxoK3iPDjrDTRg6ggpx7EjdRWPuXOqxzmE3ubB2okq9fOd0fg'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                download="QBot2-Windows-Backend.zip"
                 className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
@@ -203,11 +206,14 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
           <div className="mt-6 pt-4 border-t border-slate-800">
             {hasEntitlement ? (
               <a
-                href={downloads?.android?.url || '#'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Initiating download: qbot2-android-v2.1.0.apk (Authorized by licensing token).');
-                }}
+                href={
+                  downloads?.downloads?.find((d: any) => d.platform === 'android')?.downloadUrl ||
+                  downloads?.android?.url ||
+                  'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                download="QBot2-Mobile-Monitor-v2.1.0.apk"
                 className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-purple-500 hover:bg-purple-400 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
