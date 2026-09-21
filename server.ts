@@ -292,7 +292,10 @@ async function startServer() {
         key_id: orderResult.key_id,
         name: orderResult.name,
         description: orderResult.description,
-        notes: orderResult.notes
+        notes: orderResult.notes,
+        isSimulated: orderResult.isSimulated,
+        authError: orderResult.authError,
+        mode: orderResult.mode
       });
     } catch (err: any) {
       console.error('Razorpay create-order error:', err);

@@ -71,8 +71,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, op
         authError: data.authError
       };
 
-      // If backend detected Razorpay credentials auth failure, open the interactive test sandbox modal directly
-      if (data.isSimulated || data.authError) {
+      const isTestOrder = Boolean(
+        data.isSimulated ||
+        data.authError ||
+        (orderId && (orderId.startsWith('order_rzp_test_') || orderId.includes('test')))
+      );
+
+      // If backend generated a test sandbox order or API authentication failed, open the interactive test sandbox modal directly
+      if (isTestOrder) {
         setActiveOrderData(orderDataObj);
         setTestModalOpen(true);
         setLoadingPlan(null);
