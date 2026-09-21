@@ -18,7 +18,8 @@ import {
   Cpu,
   Monitor,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 
@@ -30,6 +31,29 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const handleExportMySQLDump = async () => {
+    try {
+      const res = await fetch('/api/admin/database/export-sql', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'if0_42963020_algotraders_dump.sql';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setActionMessage('MySQL .SQL dump downloaded successfully! Import it via phpMyAdmin.');
+      } else {
+        setActionMessage('Failed to download MySQL dump.');
+      }
+    } catch (err: any) {
+      setActionMessage(`Error exporting SQL: ${err.message}`);
+    }
+  };
 
   // Support notes modal state
   const [selectedUserForNote, setSelectedUserForNote] = useState<any | null>(null);
@@ -52,11 +76,11 @@ export const AdminDashboard: React.FC = () => {
       if (mRes.ok) setMetrics(await mRes.json());
       if (uRes.ok) {
         const uData = await uRes.json();
-        setUsersList(uData.users || []);
+        setUsersList(Array.isArray(uData) ? uData : (uData.users || []));
       }
       if (wRes.ok) {
         const wData = await wRes.json();
-        setWebhooks(wData.events || []);
+        setWebhooks(Array.isArray(wData) ? wData : (wData.events || []));
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -235,8 +259,16 @@ export const AdminDashboard: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={handleExportMySQLDump}
+            className="px-3 py-2 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Download MySQL .sql file for phpMyAdmin import"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Export MySQL Dump (.sql)</span>
+          </button>
+          <button
             onClick={fetchAdminData}
-            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors"
+            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Telemetry</span>
@@ -377,7 +409,7 @@ export const AdminDashboard: React.FC = () => {
                     )}
                   </td>
                   <td className="py-3 px-3 text-slate-300">
-                    {cust.devices?.length || 0} device(s)
+                    {cust.devicesCount ?? (cust.devices?.length || 0)} device(s)
                   </td>
                   <td className="py-3 px-3 text-[11px] text-slate-400 max-w-[150px] truncate font-sans">
                     {cust.supportNotes ? cust.supportNotes[cust.supportNotes.length - 1] : 'No notes'}

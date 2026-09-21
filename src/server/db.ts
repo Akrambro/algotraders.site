@@ -1066,5 +1066,43 @@ export const db = {
       mrr,
       activeDevicesCount
     };
+  },
+
+  // --- RAW DATABASE TABLES FOR DATABASE EXPLORER ---
+  async getAllDatabaseTables() {
+    const users = Array.from(memoryStore.users.values()).map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      isVerified: u.isVerified,
+      twoFactorEnabled: u.twoFactorEnabled,
+      createdAt: u.createdAt
+    }));
+    const subscriptions = Array.from(memoryStore.subscriptions.values());
+    const devices = Array.from(memoryStore.devices.values());
+    const transactions = Array.from(memoryStore.paymentTransactions.values());
+    const webhooks = Array.from(memoryStore.webhookEvents.values());
+    const auditLogs = memoryStore.auditLogs.slice(0, 50);
+
+    return {
+      status: {
+        mode: 'PostgreSQL-Compatible Resilient In-Memory Schema',
+        connected: true,
+        totalUsers: users.length,
+        totalSubscriptions: subscriptions.length,
+        totalDevices: devices.length,
+        totalTransactions: transactions.length,
+        totalWebhooks: webhooks.length
+      },
+      tables: {
+        users,
+        subscriptions,
+        devices,
+        transactions,
+        webhooks,
+        auditLogs
+      }
+    };
   }
 };

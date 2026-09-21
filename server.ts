@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { db } from './src/server/db.ts';
@@ -13,13 +14,14 @@ import {
 import { billingService } from './src/server/billing.ts';
 import { paymentProvider } from './src/server/payments/index.ts';
 import { licensingService } from './src/server/licensing.ts';
+import { generateMySQLDump, testMySQLConnection } from './src/server/mysql.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   // JSON Body Parser with raw body preservation for webhook verification
   app.use(
@@ -503,9 +505,49 @@ async function startServer() {
           };
         })
       );
-      res.json(detailedUsers);
+      // Support both array access and object access for clients
+      res.json({
+        users: detailedUsers,
+        total: detailedUsers.length
+      });
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to fetch users list.' });
+    }
+  });
+
+  // GET /api/database/tables - JSON Database Inspector API (Backend/Admin)
+  app.get('/api/database/tables', async (_req: Request, res: Response) => {
+    try {
+      const dbTables = await db.getAllDatabaseTables();
+      res.json(dbTables);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to fetch database tables.' });
+    }
+  });
+
+  // GET /api/admin/database/export-sql and GET /api/database/dump.sql
+  // Generates ready-to-run MySQL script for phpMyAdmin (if0_42963020_algotraders)
+  app.get(['/api/admin/database/export-sql', '/api/database/dump.sql'], async (_req: Request, res: Response) => {
+    try {
+      const sqlDump = await generateMySQLDump();
+      res.setHeader('Content-Type', 'application/sql');
+      res.setHeader('Content-Disposition', 'attachment; filename="if0_42963020_algotraders_dump.sql"');
+      res.send(sqlDump);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to generate MySQL dump: ' + err.message });
+    }
+  });
+
+  // GET /api/database/status - Returns MySQL and in-memory engine status
+  app.get('/api/database/status', async (_req: Request, res: Response) => {
+    try {
+      const mysqlStatus = await testMySQLConnection();
+      res.json({
+        inMemory: { status: 'active', connected: true },
+        mysql: mysqlStatus
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 
@@ -610,20 +652,39 @@ async function startServer() {
   });
 
   // ==========================================
-  // VITE MIDDLEWARE SETUP
+  // VITE & STATIC ASSET MIDDLEWARE SETUP
   // ==========================================
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa'
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
+  const distPath = path.join(process.cwd(), 'dist');
+  const distIndexHtml = path.join(distPath, 'index.html');
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && fs.existsSync(distIndexHtml)) {
+    // Serve pre-built static bundle in production
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(distIndexHtml);
     });
+  } else {
+    // Fallback to dynamic Vite middleware if running in dev or if dist has not been compiled
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa'
+      });
+      app.use(vite.middlewares);
+    } catch (err: any) {
+      console.warn('[Vite] Could not start Vite dev middleware:', err?.message);
+      if (fs.existsSync(distIndexHtml)) {
+        app.use(express.static(distPath));
+        app.get('*', (_req, res) => {
+          res.sendFile(distIndexHtml);
+        });
+      } else {
+        app.get('*', (_req, res) => {
+          res.status(500).send('<h1>AlgoTraders QBot2 Server</h1><p>Frontend assets are not built yet. Please run <code>npm run build</code>.</p>');
+        });
+      }
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {
