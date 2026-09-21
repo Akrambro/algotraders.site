@@ -15,6 +15,7 @@ import { billingService } from './src/server/billing.ts';
 import { paymentProvider } from './src/server/payments/index.ts';
 import { licensingService } from './src/server/licensing.ts';
 import { generateMySQLDump, testMySQLConnection } from './src/server/mysql.ts';
+import { testSupabaseConnection, generateSupabaseSQL, getSupabaseConfig } from './src/server/supabase.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -526,24 +527,46 @@ async function startServer() {
   });
 
   // GET /api/admin/database/export-sql and GET /api/database/dump.sql
-  // Generates ready-to-run MySQL script for phpMyAdmin (if0_42963020_algotraders)
+  // Generates ready-to-run MySQL script
   app.get(['/api/admin/database/export-sql', '/api/database/dump.sql'], async (_req: Request, res: Response) => {
     try {
       const sqlDump = await generateMySQLDump();
       res.setHeader('Content-Type', 'application/sql');
-      res.setHeader('Content-Disposition', 'attachment; filename="if0_42963020_algotraders_dump.sql"');
+      res.setHeader('Content-Disposition', 'attachment; filename="algotraders_mysql_dump.sql"');
       res.send(sqlDump);
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to generate MySQL dump: ' + err.message });
     }
   });
 
-  // GET /api/database/status - Returns MySQL and in-memory engine status
+  // GET /api/admin/database/export-supabase-sql and GET /api/database/supabase.sql
+  // Generates ready-to-run PostgreSQL / Supabase SQL schema & seed script
+  app.get(['/api/admin/database/export-supabase-sql', '/api/database/supabase.sql'], async (_req: Request, res: Response) => {
+    try {
+      const sqlDump = await generateSupabaseSQL();
+      res.setHeader('Content-Type', 'application/sql');
+      res.setHeader('Content-Disposition', 'attachment; filename="algotraders_supabase_schema.sql"');
+      res.send(sqlDump);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to generate Supabase SQL: ' + err.message });
+    }
+  });
+
+  // GET /api/database/status - Returns Supabase, MySQL and in-memory engine status
   app.get('/api/database/status', async (_req: Request, res: Response) => {
     try {
-      const mysqlStatus = await testMySQLConnection();
+      const [mysqlStatus, supabaseStatus] = await Promise.all([
+        testMySQLConnection(),
+        testSupabaseConnection()
+      ]);
+      const supabaseConfig = getSupabaseConfig();
       res.json({
         inMemory: { status: 'active', connected: true },
+        supabase: {
+          ...supabaseStatus,
+          url: supabaseConfig.url ? `${supabaseConfig.url.slice(0, 20)}...` : 'Not configured',
+          configured: Boolean(supabaseConfig.url && supabaseConfig.key)
+        },
         mysql: mysqlStatus
       });
     } catch (err: any) {

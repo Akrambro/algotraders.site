@@ -19,7 +19,8 @@ import {
   Monitor,
   ShieldCheck,
   Loader2,
-  Download
+  Download,
+  Database
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 
@@ -31,6 +32,31 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<any>(null);
+  const [isTestingDb, setIsTestingDb] = useState<boolean>(false);
+
+  const handleExportSupabaseSQL = async () => {
+    try {
+      const res = await fetch('/api/admin/database/export-supabase-sql', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'algotraders_supabase_schema.sql';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setActionMessage('Supabase PostgreSQL schema & seed script downloaded! Paste it into Supabase SQL Editor.');
+      } else {
+        setActionMessage('Failed to download Supabase SQL.');
+      }
+    } catch (err: any) {
+      setActionMessage(`Error exporting Supabase SQL: ${err.message}`);
+    }
+  };
 
   const handleExportMySQLDump = async () => {
     try {
@@ -42,11 +68,11 @@ export const AdminDashboard: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'if0_42963020_algotraders_dump.sql';
+        a.download = 'algotraders_mysql_dump.sql';
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setActionMessage('MySQL .SQL dump downloaded successfully! Import it via phpMyAdmin.');
+        setActionMessage('MySQL .SQL dump downloaded successfully!');
       } else {
         setActionMessage('Failed to download MySQL dump.');
       }
@@ -67,10 +93,11 @@ export const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const [mRes, uRes, wRes] = await Promise.all([
+      const [mRes, uRes, wRes, dbRes] = await Promise.all([
         fetch('/api/admin/metrics', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/webhooks', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/admin/webhooks', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/database/status')
       ]);
 
       if (mRes.ok) setMetrics(await mRes.json());
@@ -82,10 +109,34 @@ export const AdminDashboard: React.FC = () => {
         const wData = await wRes.json();
         setWebhooks(Array.isArray(wData) ? wData : (wData.events || []));
       }
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        setDbStatus(dbData);
+      }
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestSupabaseLive = async () => {
+    setIsTestingDb(true);
+    try {
+      const res = await fetch('/api/database/status');
+      if (res.ok) {
+        const data = await res.json();
+        setDbStatus(data);
+        if (data.supabase?.connected) {
+          setActionMessage(`Supabase connection verified! Status: ${data.supabase.message}`);
+        } else {
+          setActionMessage(`Supabase check: ${data.supabase?.message || 'Not connected yet'}`);
+        }
+      }
+    } catch (err: any) {
+      setActionMessage(`Database check failed: ${err.message}`);
+    } finally {
+      setIsTestingDb(false);
     }
   };
 
@@ -226,7 +277,7 @@ export const AdminDashboard: React.FC = () => {
             className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Switch to Admin Demo Account</span>
+            <span>Switch to Admin Role</span>
           </button>
         </div>
       </div>
@@ -257,14 +308,22 @@ export const AdminDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExportSupabaseSQL}
+            className="px-3 py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-emerald-950/40"
+            title="Download PostgreSQL / Supabase schema & initial data script"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Export Supabase SQL (.sql)</span>
+          </button>
           <button
             onClick={handleExportMySQLDump}
-            className="px-3 py-2 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Download MySQL .sql file for phpMyAdmin import"
+            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Download MySQL .sql file"
           >
             <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Export MySQL Dump (.sql)</span>
+            <span>Export MySQL (.sql)</span>
           </button>
           <button
             onClick={fetchAdminData}
@@ -286,7 +345,7 @@ export const AdminDashboard: React.FC = () => {
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Total Customers</div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
@@ -327,6 +386,53 @@ export const AdminDashboard: React.FC = () => {
           <div className="text-2xl font-bold font-mono text-purple-300 mt-1">
             {metrics?.activeDevices ?? '...'}
           </div>
+        </div>
+      </div>
+
+      {/* Supabase & Cloud Database Status Card */}
+      <div className="glass-panel rounded-2xl p-4 border border-emerald-900/40 bg-emerald-950/20 shadow-xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+            dbStatus?.supabase?.connected
+              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+              : dbStatus?.supabase?.configured
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+              : 'bg-slate-800 text-slate-400 border-slate-700'
+          }`}>
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-white">Database Engine & Supabase Cloud Sync</h4>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                dbStatus?.supabase?.connected
+                  ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/40'
+                  : dbStatus?.supabase?.configured
+                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                  : 'bg-slate-900 text-slate-400 border-slate-800'
+              }`}>
+                {dbStatus?.supabase?.connected
+                  ? 'SUPABASE SYNC CONNECTED'
+                  : dbStatus?.supabase?.configured
+                  ? 'KEYS DETECTED (SCHEMA PENDING)'
+                  : 'IN-MEMORY LOCAL STORAGE'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              {dbStatus?.supabase?.message || 'In-memory engine active. Connect Supabase to persist customer records permanently.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end md:self-auto">
+          <button
+            onClick={handleTestSupabaseLive}
+            disabled={isTestingDb}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500/50 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            {isTestingDb ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />}
+            <span>Test Live Connection</span>
+          </button>
         </div>
       </div>
 

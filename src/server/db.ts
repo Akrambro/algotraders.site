@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { getSupabaseClient } from './supabase.ts';
 import {
   User,
   Subscription,
@@ -152,7 +153,7 @@ const seedUsers: (User & { passwordHash: string })[] = [
     name: 'Chief Admin',
     role: 'admin',
     isVerified: true,
-    twoFactorEnabled: true,
+    twoFactorEnabled: false,
     createdAt: new Date(now - 90 * oneDayMs).toISOString(),
     passwordHash: defaultPasswordHash
   },
