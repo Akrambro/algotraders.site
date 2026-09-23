@@ -125,10 +125,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             {mode === 'signin' && 'Access your paired devices and subscription entitlements'}
-            {mode === 'signup' && 'Activate your 7-day full access trial automatically'}
+            {mode === 'signup' && 'Access your personal license dashboard & paired devices'}
             {mode === 'forgot' && 'Enter your registered email to receive reset instructions'}
             {mode === 'reset' && 'Must be at least 8 characters long'}
-            {mode === '2fa' && 'Enter your authenticator app code (Demo: 123456)'}
+            {mode === '2fa' && 'Enter your authenticator app code'}
           </p>
         </div>
 
@@ -295,7 +295,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <>
                 <span>
                   {mode === 'signin' && 'Sign In'}
-                  {mode === 'signup' && 'Create Account & Start Trial'}
+                  {mode === 'signup' && 'Create Account'}
                   {mode === 'forgot' && 'Send Reset Link'}
                   {mode === 'reset' && 'Update Password'}
                   {mode === '2fa' && 'Verify & Enter Dashboard'}
@@ -316,7 +316,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => setMode('signup')}
                 className="text-cyan-400 font-semibold hover:underline"
               >
-                Sign up for 7-day trial
+                Sign up here
               </button>
             </p>
           ) : (

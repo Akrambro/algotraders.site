@@ -81,7 +81,7 @@ async function startServer() {
       const subscription = await db.getSubscription(user.id);
 
       return res.status(201).json({
-        message: 'Account created successfully. 7-day free trial activated.',
+        message: 'Account created successfully. Welcome to Algo Trders.site.',
         user,
         token,
         subscription
@@ -506,24 +506,32 @@ async function startServer() {
   app.get('/api/downloads/file/:platform', async (req: Request, res: Response) => {
     try {
       const platform = req.params.platform;
+      const { Readable } = await import('stream');
+
       if (platform === 'windows') {
         const windowsUrl = 'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkwMTUyMDY3LCJleHAiOjIxMDU1MTIwNjd9.GXDOaHDUYcuRvwT5SQVb5bPBXGnC8va84jDLuvLwDQwJPkKQbBF2fwD4ZjDiEi5up0eB43ly3ulAaRCq57UQxg';
         res.setHeader('Content-Disposition', 'attachment; filename="QBot2-Windows.zip"');
         res.setHeader('Content-Type', 'application/x-zip-compressed');
 
         const fileResponse = await fetch(windowsUrl);
-        if (!fileResponse.ok || !fileResponse.body) {
-          return res.redirect(windowsUrl);
+        if (fileResponse.ok && fileResponse.body) {
+          // @ts-ignore
+          Readable.fromWeb(fileResponse.body).pipe(res);
+        } else {
+          res.redirect(windowsUrl);
         }
-
-        const { Readable } = await import('stream');
-        // @ts-ignore
-        Readable.fromWeb(fileResponse.body).pipe(res);
       } else if (platform === 'android') {
         const apkUrl = 'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o';
         res.setHeader('Content-Disposition', 'attachment; filename="QBot2-Mobile-Monitor-v2.1.0.apk"');
         res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-        res.redirect(apkUrl);
+        
+        const fileResponse = await fetch(apkUrl, { redirect: 'follow' });
+        if (fileResponse.ok && fileResponse.body) {
+          // @ts-ignore
+          Readable.fromWeb(fileResponse.body).pipe(res);
+        } else {
+          res.redirect(apkUrl);
+        }
       } else {
         res.status(404).json({ error: 'Unknown platform' });
       }

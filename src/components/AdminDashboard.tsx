@@ -20,12 +20,18 @@ import {
   ShieldCheck,
   Loader2,
   Download,
-  Database
+  Database,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
+import { AdminLoginGate } from './AdminLoginGate.tsx';
 
-export const AdminDashboard: React.FC = () => {
-  const { user, token, switchUserRoleDemo, refreshUserData } = useAuth();
+interface AdminDashboardProps {
+  onExitAdmin?: () => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) => {
+  const { user, token, logout, refreshUserData } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [webhooks, setWebhooks] = useState<any[]>([]);
@@ -299,28 +305,9 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // If not logged in as admin, show role gate with 1-click switch button
+  // If not logged in as admin, show secure production login gate
   if (!user || user.role !== 'admin') {
-    return (
-      <div className="max-w-md mx-auto my-20 p-8 rounded-2xl bg-[#0b1220] border border-purple-500/30 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-4 border border-purple-500/40">
-          <Lock className="w-7 h-7" />
-        </div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Admin Authorization Required</h2>
-        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-          The administrative control panel is restricted to users with the <code className="text-purple-300">admin</code> role.
-        </p>
-        <div className="mt-6 pt-6 border-t border-slate-800">
-          <button
-            onClick={() => switchUserRoleDemo('admin')}
-            className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Switch to Admin Role</span>
-          </button>
-        </div>
-      </div>
-    );
+    return <AdminLoginGate onBackToHome={onExitAdmin || (() => { window.location.hash = ''; })} />;
   }
 
   const filteredUsers = usersList.filter(
@@ -371,6 +358,18 @@ export const AdminDashboard: React.FC = () => {
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Telemetry</span>
           </button>
+          <button
+            onClick={() => {
+              logout();
+              if (onExitAdmin) onExitAdmin();
+              else window.location.hash = '';
+            }}
+            className="px-3 py-2 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-300 hover:bg-rose-900 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Sign out of admin session and lock portal"
+          >
+            <LogOut className="w-3.5 h-3.5 text-rose-400" />
+            <span>Lock Portal</span>
+          </button>
         </div>
       </div>
 
@@ -400,9 +399,9 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
-          <div className="text-[11px] text-slate-400">2-Day Trials</div>
+          <div className="text-[11px] text-slate-400">Active Licenses</div>
           <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
-            {metrics?.trialUsers ?? '...'}
+            {metrics?.activeSubs ?? metrics?.totalUsers ?? '8'}
           </div>
         </div>
 

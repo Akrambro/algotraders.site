@@ -3,6 +3,7 @@ export type UserRole = 'customer' | 'admin';
 export type SubscriptionStatus =
   | 'active'
   | 'trialing'
+  | 'inactive'
   | 'pending'
   | 'halted'
   | 'past_due'

@@ -36,26 +36,40 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
     'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o';
 
   // Trigger file download directly on the same page without redirecting or navigating to external sites
-  const handleInPageDownload = (targetUrl: string, filename: string, platform: 'windows' | 'android') => {
+  const handleInPageDownload = async (targetUrl: string, filename: string, platform: 'windows' | 'android') => {
     setDownloadingPlatform(platform);
-    setDownloadNotice(`Starting in-page download: ${filename}...`);
+    setDownloadNotice(`Downloading ${filename} directly to your device...`);
 
-    // 1. Hidden iframe: forces browser to handle response as a file download without leaving or replacing page
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.top = '-9999px';
-    iframe.style.left = '-9999px';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    iframe.style.opacity = '0';
-    iframe.style.border = 'none';
-    iframe.src = targetUrl;
-    document.body.appendChild(iframe);
+    try {
+      // Try local direct stream first
+      const endpoint = `/api/downloads/file/${platform}`;
+      const response = await fetch(endpoint);
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(blobUrl);
+        }, 1000);
+        setDownloadNotice(`Download started! ${filename} saved to your device.`);
+        setTimeout(() => setDownloadNotice(null), 5000);
+        setDownloadingPlatform(null);
+        return;
+      }
+    } catch (e) {
+      console.warn('Direct stream fallback to download iframe', e);
+    }
 
-    // 2. Hidden anchor click with HTML5 download attribute
+    // Fallback: Hidden anchor download
     const link = document.createElement('a');
     link.href = targetUrl;
     link.setAttribute('download', filename);
+    link.setAttribute('target', '_self');
     link.style.display = 'none';
     document.body.appendChild(link);
     try {
@@ -63,14 +77,11 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
     } catch {}
 
     setTimeout(() => {
-      try {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-        if (document.body.contains(link)) document.body.removeChild(link);
-      } catch {}
+      if (document.body.contains(link)) document.body.removeChild(link);
       setDownloadingPlatform(null);
-      setDownloadNotice(`Download started! The file is downloading on this page directly to your device.`);
+      setDownloadNotice(`Download initiated on this page! Check your browser downloads folder.`);
       setTimeout(() => setDownloadNotice(null), 5000);
-    }, 3000);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -127,7 +138,7 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
             ) : (
               <>
                 <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Subscription or Trial Required</span>
+                <span>Active Subscription Required</span>
               </>
             )}
           </span>
@@ -137,7 +148,7 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
       {!hasEntitlement && (
         <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xs text-amber-200">
-            <strong>Active license required:</strong> Download links for production executables are gated. Please activate a trial or select a subscription to download.
+            <strong>Active license required:</strong> Download links for production executables are gated. Please select a monthly or annual subscription to download.
           </div>
           <button
             onClick={onGoToPricing}

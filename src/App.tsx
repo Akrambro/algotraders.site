@@ -14,6 +14,7 @@ import { LegalModals } from './components/LegalModals.tsx';
 import { CustomerDashboard } from './components/CustomerDashboard.tsx';
 import { AdminDashboard } from './components/AdminDashboard.tsx';
 import { DocsView } from './components/DocsView.tsx';
+import { CustomerFeedbackTicker } from './components/CustomerFeedbackTicker.tsx';
 
 function MainApp() {
   const { user } = useAuth();
@@ -103,6 +104,9 @@ function MainApp() {
               }}
               onOpenDashboard={() => setCurrentView('dashboard')}
             />
+
+            {/* Live Customer Feedback Marquee Strip */}
+            <CustomerFeedbackTicker />
 
             <FeaturesSection />
 

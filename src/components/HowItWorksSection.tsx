@@ -20,7 +20,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
       icon: UserPlus,
       title: 'Create Your Account',
       description:
-        'Sign up on Algo Trders.site with your email address. Every new registration immediately activates a 7-day full-access trial.',
+        'Create your secure account on Algo Trders.site with your email address to access your personal customer license portal.',
       tag: 'Step 1'
     },
     {

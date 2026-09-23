@@ -136,8 +136,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
                     subscription?.status === 'active'
                       ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
-                      : subscription?.status === 'trialing'
-                      ? 'bg-blue-950/80 text-blue-400 border border-blue-500/30'
                       : 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
                   }`}
                 >
@@ -145,9 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? subscription.planId === 'annual'
                       ? 'Annual Pro'
                       : 'Monthly Pro'
-                    : subscription?.status === 'trialing'
-                    ? 'Trial Version'
-                    : 'Trial Version'}
+                    : 'Starter'}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
               </button>
@@ -164,15 +160,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className={`inline-block w-2 h-2 rounded-full ${
                           subscription?.status === 'active'
                             ? 'bg-emerald-400'
-                            : subscription?.status === 'trialing'
-                            ? 'bg-blue-400'
                             : 'bg-amber-400'
                         }`}
                       />
                       <span className="text-xs font-semibold text-slate-200 capitalize">
                         {subscription?.status === 'active'
-                          ? `${subscription.planId === 'annual' ? 'Annual Pro' : 'Monthly Pro'} Subscription`
-                          : 'Trial Version'}
+                          ? `${subscription.planId === 'annual' ? 'Annual Pro' : 'Monthly Pro'} License`
+                          : 'Starter (License Required)'}
                       </span>
                     </div>
                   </div>
@@ -222,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-xl shadow-lg shadow-cyan-500/20 transition-colors cursor-pointer"
                 id="navbar-start-trial-btn"
               >
-                Start Free Trial
+                Create Account
               </button>
             </div>
           )}

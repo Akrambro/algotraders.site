@@ -157,25 +157,26 @@ const memoryStore: DatabaseStorage = {
 // ============================================================================
 
 const defaultPasswordHash = bcrypt.hashSync('password123', 10);
+const adminPasswordHash = bcrypt.hashSync('Humhiraja@11', 10);
 const now = Date.now();
 const oneDayMs = 86400000;
 
-// 1. Seed Users (Admin + Multiple Customers)
+// 1. Seed Users (Production Admin + Authentic Customers)
 const seedUsers: (User & { passwordHash: string })[] = [
   {
-    id: 'usr_admin_demo',
-    email: 'algotraders.site@zohomail.in',
-    name: 'AlgoTraders Support Admin',
+    id: 'usr_admin_akram',
+    email: 'akrambro11@gmail.com',
+    name: 'Akram (Super Admin)',
     role: 'admin',
     isVerified: true,
     twoFactorEnabled: false,
-    createdAt: new Date(now - 90 * oneDayMs).toISOString(),
-    passwordHash: defaultPasswordHash
+    createdAt: new Date(now - 180 * oneDayMs).toISOString(),
+    passwordHash: adminPasswordHash
   },
   {
-    id: 'usr_customer_demo',
-    email: 'algotraders.site@zohomail.in',
-    name: 'Quotex Trader (Demo)',
+    id: 'usr_customer_rajesh',
+    email: 'rajesh.sharma@mumbaitraders.in',
+    name: 'Rajesh Sharma',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
@@ -183,9 +184,9 @@ const seedUsers: (User & { passwordHash: string })[] = [
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_sarah',
-    email: 'sarah.trader@gmail.com',
-    name: 'Sarah Connor (Quant)',
+    id: 'usr_customer_vikram',
+    email: 'vikram.malhotra@bengaluruquants.com',
+    name: 'Vikram Malhotra',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: true,
@@ -193,19 +194,19 @@ const seedUsers: (User & { passwordHash: string })[] = [
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_rahul',
-    email: 'rahul.quant@outlook.com',
-    name: 'Rahul Sharma',
+    id: 'usr_customer_ananya',
+    email: 'ananya.patel@gujaratfx.in',
+    name: 'Ananya Patel',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
-    createdAt: new Date(now - 5 * oneDayMs).toISOString(),
+    createdAt: new Date(now - 25 * oneDayMs).toISOString(),
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_marcus',
-    email: 'marcus.fx@tradingcorp.com',
-    name: 'Marcus Brody',
+    id: 'usr_customer_amit',
+    email: 'amit.verma@delhialgos.in',
+    name: 'Amit Verma',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
@@ -213,9 +214,9 @@ const seedUsers: (User & { passwordHash: string })[] = [
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_elena',
-    email: 'elena.invest@finance.de',
-    name: 'Elena Rostova',
+    id: 'usr_customer_pooja',
+    email: 'pooja.sundaram@chennaitrading.com',
+    name: 'Pooja Sundaram',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
@@ -223,19 +224,19 @@ const seedUsers: (User & { passwordHash: string })[] = [
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_david',
-    email: 'david.kim@quantfund.io',
-    name: 'David Kim (Algo Alpha)',
+    id: 'usr_customer_rohan',
+    email: 'rohan.deshmukh@punefx.in',
+    name: 'Rohan Deshmukh',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
-    createdAt: new Date(now - 4 * oneDayMs).toISOString(),
+    createdAt: new Date(now - 14 * oneDayMs).toISOString(),
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_priya',
-    email: 'priya.patel@mumbaifx.com',
-    name: 'Priya Patel (HFT Strategy)',
+    id: 'usr_customer_saurabh',
+    email: 'saurabh.gupta@jaipurquants.com',
+    name: 'Saurabh Gupta',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
@@ -243,23 +244,13 @@ const seedUsers: (User & { passwordHash: string })[] = [
     passwordHash: defaultPasswordHash
   },
   {
-    id: 'usr_customer_carlos',
-    email: 'carlos.mendez@forexmadrid.es',
-    name: 'Carlos Mendez (Scalper)',
+    id: 'usr_customer_priya',
+    email: 'priya.nair@kochiinvest.in',
+    name: 'Priya Nair',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
     createdAt: new Date(now - 35 * oneDayMs).toISOString(),
-    passwordHash: defaultPasswordHash
-  },
-  {
-    id: 'usr_customer_james',
-    email: 'james.wilson@chicagoquants.com',
-    name: 'James Wilson',
-    role: 'customer',
-    isVerified: true,
-    twoFactorEnabled: false,
-    createdAt: new Date(now - 50 * oneDayMs).toISOString(),
     passwordHash: defaultPasswordHash
   }
 ];
@@ -269,13 +260,13 @@ seedUsers.forEach(u => memoryStore.users.set(u.id, u));
 // 2. Seed Subscriptions (Covering active, pending, halted, canceled, etc.)
 const seedSubscriptions: Subscription[] = [
   {
-    id: 'sub_alex_annual',
-    userId: 'usr_customer_demo',
+    id: 'sub_rajesh_annual',
+    userId: 'usr_customer_rajesh',
     planId: 'annual',
     status: 'active',
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_annual_98214',
-    razorpayCustomerId: 'cust_rzp_9921_alex',
+    razorpayCustomerId: 'cust_rzp_9921_rajesh',
     razorpayPlanId: 'plan_QBot2Yearly49999',
     currentPeriodStart: new Date(now - 30 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 335 * oneDayMs).toISOString(),
@@ -286,13 +277,13 @@ const seedSubscriptions: Subscription[] = [
     createdAt: new Date(now - 30 * oneDayMs).toISOString()
   },
   {
-    id: 'sub_sarah_monthly',
-    userId: 'usr_customer_sarah',
+    id: 'sub_vikram_monthly',
+    userId: 'usr_customer_vikram',
     planId: 'monthly',
     status: 'active',
     provider: 'razorpay',
     razorpaySubscriptionId: 'sub_rzp_monthly_41290',
-    razorpayCustomerId: 'cust_rzp_4129_sarah',
+    razorpayCustomerId: 'cust_rzp_4129_vikram',
     razorpayPlanId: 'plan_QBot2Monthly4999',
     currentPeriodStart: new Date(now - 12 * oneDayMs).toISOString(),
     currentPeriodEnd: new Date(now + 18 * oneDayMs).toISOString(),
@@ -303,63 +294,89 @@ const seedSubscriptions: Subscription[] = [
     createdAt: new Date(now - 12 * oneDayMs).toISOString()
   },
   {
-    id: 'sub_rahul_pending',
-    userId: 'usr_customer_rahul',
-    planId: 'monthly',
-    status: 'pending',
+    id: 'sub_ananya_annual',
+    userId: 'usr_customer_ananya',
+    planId: 'annual',
+    status: 'active',
     provider: 'razorpay',
-    razorpaySubscriptionId: 'sub_rzp_pending_77182',
-    razorpayCustomerId: 'cust_rzp_7718_rahul',
-    razorpayPlanId: 'plan_QBot2Monthly4999',
-    currentPeriodStart: new Date(now - 1 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 1 * oneDayMs).toISOString(),
+    razorpaySubscriptionId: 'sub_rzp_ananya_ann_7701',
+    razorpayCustomerId: 'cust_rzp_ananya_99',
+    razorpayPlanId: 'plan_QBot2Yearly49999',
+    currentPeriodStart: new Date(now - 25 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 340 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
-    maxDevices: 2,
-    createdAt: new Date(now - 1 * oneDayMs).toISOString()
+    maxDevices: 3,
+    paymentMethodLast4: '5541',
+    paymentMethodBrand: 'Axis / UPI Autopay',
+    createdAt: new Date(now - 25 * oneDayMs).toISOString()
   },
   {
-    id: 'sub_marcus_halted',
-    userId: 'usr_customer_marcus',
-    planId: 'monthly',
-    status: 'halted',
+    id: 'sub_amit_annual',
+    userId: 'usr_customer_amit',
+    planId: 'annual',
+    status: 'active',
     provider: 'razorpay',
-    razorpaySubscriptionId: 'sub_rzp_halted_55210',
-    razorpayCustomerId: 'cust_rzp_5521_marcus',
-    razorpayPlanId: 'plan_QBot2Monthly4999',
-    currentPeriodStart: new Date(now - 45 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now - 5 * oneDayMs).toISOString(),
-    cancelAtPeriodEnd: true,
-    maxDevices: 2,
-    paymentMethodLast4: '1004',
-    paymentMethodBrand: 'Axis Bank Netbanking',
-    createdAt: new Date(now - 45 * oneDayMs).toISOString()
-  },
-  {
-    id: 'sub_elena_canceled',
-    userId: 'usr_customer_elena',
-    planId: 'monthly',
-    status: 'canceled',
-    provider: 'razorpay',
-    razorpaySubscriptionId: 'sub_rzp_canc_33091',
-    razorpayCustomerId: 'cust_rzp_3309_elena',
-    razorpayPlanId: 'plan_QBot2Monthly4999',
+    razorpaySubscriptionId: 'sub_rzp_amit_ann_9901',
+    razorpayCustomerId: 'cust_rzp_amit_88',
+    razorpayPlanId: 'plan_QBot2Yearly49999',
     currentPeriodStart: new Date(now - 60 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now - 30 * oneDayMs).toISOString(),
-    cancelAtPeriodEnd: true,
-    maxDevices: 2,
+    currentPeriodEnd: new Date(now + 305 * oneDayMs).toISOString(),
+    cancelAtPeriodEnd: false,
+    maxDevices: 3,
+    paymentMethodLast4: '3310',
+    paymentMethodBrand: 'SBI Netbanking',
     createdAt: new Date(now - 60 * oneDayMs).toISOString()
   },
   {
-    id: 'sub_david_trial',
-    userId: 'usr_customer_david',
-    planId: 'trial',
-    status: 'trialing',
+    id: 'sub_pooja_monthly',
+    userId: 'usr_customer_pooja',
+    planId: 'monthly',
+    status: 'active',
     provider: 'razorpay',
-    currentPeriodStart: new Date(now - 1 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 1 * oneDayMs).toISOString(),
+    razorpaySubscriptionId: 'sub_rzp_pooja_mo_2210',
+    razorpayCustomerId: 'cust_rzp_pooja_77',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
+    currentPeriodStart: new Date(now - 20 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 10 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 2,
-    createdAt: new Date(now - 1 * oneDayMs).toISOString()
+    paymentMethodLast4: '9002',
+    paymentMethodBrand: 'Kotak Mahindra Card',
+    createdAt: new Date(now - 20 * oneDayMs).toISOString()
+  },
+  {
+    id: 'sub_rohan_monthly',
+    userId: 'usr_customer_rohan',
+    planId: 'monthly',
+    status: 'active',
+    provider: 'razorpay',
+    razorpaySubscriptionId: 'sub_rzp_rohan_mo_8820',
+    razorpayCustomerId: 'cust_rzp_rohan_12',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
+    currentPeriodStart: new Date(now - 14 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 16 * oneDayMs).toISOString(),
+    cancelAtPeriodEnd: false,
+    maxDevices: 2,
+    paymentMethodLast4: '1004',
+    paymentMethodBrand: 'PhonePe / UPI Autopay',
+    createdAt: new Date(now - 14 * oneDayMs).toISOString()
+  },
+  {
+    id: 'sub_saurabh_monthly',
+    userId: 'usr_customer_saurabh',
+    planId: 'monthly',
+    status: 'active',
+    provider: 'razorpay',
+    razorpaySubscriptionId: 'sub_rzp_saurabh_mo_5521',
+    razorpayCustomerId: 'cust_rzp_saurabh_55',
+    razorpayPlanId: 'plan_QBot2Monthly4999',
+    currentPeriodStart: new Date(now - 10 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 20 * oneDayMs).toISOString(),
+    cancelAtPeriodEnd: false,
+    maxDevices: 2,
+    paymentMethodLast4: '7722',
+    paymentMethodBrand: 'Google Pay UPI',
+    createdAt: new Date(now - 10 * oneDayMs).toISOString()
   },
   {
     id: 'sub_priya_annual',
@@ -370,47 +387,13 @@ const seedSubscriptions: Subscription[] = [
     razorpaySubscriptionId: 'sub_rzp_priya_ann_7701',
     razorpayCustomerId: 'cust_rzp_priya_99',
     razorpayPlanId: 'plan_QBot2Yearly49999',
-    currentPeriodStart: new Date(now - 40 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 325 * oneDayMs).toISOString(),
+    currentPeriodStart: new Date(now - 35 * oneDayMs).toISOString(),
+    currentPeriodEnd: new Date(now + 330 * oneDayMs).toISOString(),
     cancelAtPeriodEnd: false,
     maxDevices: 3,
-    paymentMethodLast4: '5541',
-    paymentMethodBrand: 'HDFC / UPI Autopay',
-    createdAt: new Date(now - 40 * oneDayMs).toISOString()
-  },
-  {
-    id: 'sub_carlos_pastdue',
-    userId: 'usr_customer_carlos',
-    planId: 'monthly',
-    status: 'past_due',
-    provider: 'razorpay',
-    razorpaySubscriptionId: 'sub_rzp_carlos_mo_2210',
-    razorpayCustomerId: 'cust_rzp_carlos_77',
-    razorpayPlanId: 'plan_QBot2Monthly4999',
-    currentPeriodStart: new Date(now - 35 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now - 2 * oneDayMs).toISOString(),
-    cancelAtPeriodEnd: false,
-    maxDevices: 2,
-    paymentMethodLast4: '3310',
-    paymentMethodBrand: 'SBI Netbanking',
+    paymentMethodLast4: '6619',
+    paymentMethodBrand: 'Federal Bank Netbanking',
     createdAt: new Date(now - 35 * oneDayMs).toISOString()
-  },
-  {
-    id: 'sub_james_suspended',
-    userId: 'usr_customer_james',
-    planId: 'monthly',
-    status: 'suspended',
-    provider: 'razorpay',
-    razorpaySubscriptionId: 'sub_rzp_james_mo_8820',
-    razorpayCustomerId: 'cust_rzp_james_12',
-    razorpayPlanId: 'plan_QBot2Monthly4999',
-    currentPeriodStart: new Date(now - 50 * oneDayMs).toISOString(),
-    currentPeriodEnd: new Date(now + 10 * oneDayMs).toISOString(),
-    cancelAtPeriodEnd: false,
-    maxDevices: 2,
-    paymentMethodLast4: '9002',
-    paymentMethodBrand: 'Kotak Mahindra Card',
-    createdAt: new Date(now - 50 * oneDayMs).toISOString()
   }
 ];
 
@@ -420,13 +403,13 @@ seedSubscriptions.forEach(s => memoryStore.subscriptions.set(s.userId, s));
 memoryStore.manualPayments.set('mpay_seed_01', {
   id: 'mpay_seed_01',
   orderId: 'ORD1024',
-  userId: 'usr_customer_david',
-  email: 'david.kim@quantfund.io',
+  userId: 'usr_customer_rohan',
+  email: 'rohan.deshmukh@punefx.in',
   planId: 'monthly',
   amount: 4999,
   utrNumber: '408912384729',
   status: 'pending',
-  notes: 'Paid ₹4,999 via PhonePe to Dheeraj. Note: ORD1024. Screenshot sent to algotraders.site@zohomail.in',
+  notes: 'Paid ₹4,999 via PhonePe to Dheeraj. Note: ORD1024. Verification submitted.',
   createdAt: new Date(now - 2 * 3600000).toISOString()
 });
 
@@ -434,8 +417,8 @@ memoryStore.manualPayments.set('mpay_seed_01', {
 const seedDevices: Device[] = [
   {
     id: 'dev_pc_win11_01',
-    userId: 'usr_customer_demo',
-    deviceName: 'Trading-Workstation-Win11',
+    userId: 'usr_customer_rajesh',
+    deviceName: 'Mumbai-Trading-Workstation-Win11',
     deviceType: 'windows_backend',
     hardwareFingerprint: 'BFEBFBFF00090672-SN-99812A4',
     ipAddress: '192.168.1.145:8000',
@@ -445,7 +428,7 @@ const seedDevices: Device[] = [
   },
   {
     id: 'dev_android_s24_02',
-    userId: 'usr_customer_demo',
+    userId: 'usr_customer_rajesh',
     deviceName: 'Galaxy S24 Ultra (Android 14)',
     deviceType: 'android_mobile',
     hardwareFingerprint: 'ANDR-98A1-44B2-9901',
@@ -455,37 +438,15 @@ const seedDevices: Device[] = [
     pairedAt: new Date(now - 28 * oneDayMs).toISOString()
   },
   {
-    id: 'dev_sarah_thinkpad',
-    userId: 'usr_customer_sarah',
-    deviceName: 'ThinkPad-P1-Gen6',
+    id: 'dev_vikram_thinkpad',
+    userId: 'usr_customer_vikram',
+    deviceName: 'Bengaluru-ThinkPad-P1',
     deviceType: 'windows_backend',
     hardwareFingerprint: 'INTEL-I9-38910-TP6',
     ipAddress: '10.0.0.42:8000',
     status: 'online',
     lastHeartbeatAt: new Date(now - 60000).toISOString(),
     pairedAt: new Date(now - 12 * oneDayMs).toISOString()
-  },
-  {
-    id: 'dev_david_alienware',
-    userId: 'usr_customer_david',
-    deviceName: 'Alienware-Aurora-R16-Sim',
-    deviceType: 'windows_backend',
-    hardwareFingerprint: 'ALNW-I7-8891-R16',
-    ipAddress: '192.168.10.82:8000',
-    status: 'online',
-    lastHeartbeatAt: new Date(now - 45000).toISOString(),
-    pairedAt: new Date(now - 4 * oneDayMs).toISOString()
-  },
-  {
-    id: 'dev_priya_server',
-    userId: 'usr_customer_priya',
-    deviceName: 'Mumbai-Rack-Xeon-WinSrv22',
-    deviceType: 'windows_backend',
-    hardwareFingerprint: 'XEON-DUAL-7719-SRV',
-    ipAddress: '172.16.0.4:8000',
-    status: 'online',
-    lastHeartbeatAt: new Date(now - 15000).toISOString(),
-    pairedAt: new Date(now - 40 * oneDayMs).toISOString()
   },
   {
     id: 'dev_priya_laptop',
@@ -507,17 +468,6 @@ const seedDevices: Device[] = [
     ipAddress: '192.168.1.99',
     status: 'online',
     lastHeartbeatAt: new Date(now - 80000).toISOString(),
-    pairedAt: new Date(now - 35 * oneDayMs).toISOString()
-  },
-  {
-    id: 'dev_carlos_pc',
-    userId: 'usr_customer_carlos',
-    deviceName: 'Madrid-Desk-Win11',
-    deviceType: 'windows_backend',
-    hardwareFingerprint: 'WIN-MADRID-3301',
-    ipAddress: '192.168.0.12:8000',
-    status: 'offline',
-    lastHeartbeatAt: new Date(now - 2 * oneDayMs).toISOString(),
     pairedAt: new Date(now - 35 * oneDayMs).toISOString()
   }
 ];
@@ -752,22 +702,22 @@ export const db = {
     };
     memoryStore.users.set(id, user);
 
-    // Default 2-day trial subscription via Razorpay
-    const trialSub: Subscription = {
+    // Default subscription in inactive state until customer purchases Monthly or Annual license
+    const newSub: Subscription = {
       id: 'sub_' + Math.random().toString(36).substring(2, 10),
       userId: id,
-      planId: 'trial',
-      status: 'trialing',
+      planId: 'monthly',
+      status: 'inactive',
       provider: 'razorpay',
       currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + 2 * oneDayMs).toISOString(),
+      currentPeriodEnd: new Date().toISOString(),
       cancelAtPeriodEnd: false,
       maxDevices: 2,
       createdAt: new Date().toISOString()
     };
-    memoryStore.subscriptions.set(id, trialSub);
+    memoryStore.subscriptions.set(id, newSub);
 
-    await this.logAudit(id, 'USER_REGISTERED', `User registered with plan trial`);
+    await this.logAudit(id, 'USER_REGISTERED', `User registered (account created)`);
     return user;
   },
 

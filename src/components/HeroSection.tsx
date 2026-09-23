@@ -16,16 +16,19 @@ import {
 } from 'lucide-react';
 
 interface HeroSectionProps {
-  onStartTrial: () => void;
+  onStartTrial?: () => void;
+  onGetAccess?: () => void;
   onSeeHowItWorks: () => void;
   onOpenDashboard: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onStartTrial,
+  onGetAccess,
   onSeeHowItWorks,
   onOpenDashboard
 }) => {
+  const handlePrimaryClick = onGetAccess || onStartTrial || onOpenDashboard;
   // Live ticker animation simulation in hero preview
   const [eurUsdPrice, setEurUsdPrice] = useState(1.0844);
   const [signalState, setSignalState] = useState<'BUY' | 'WAITING' | 'SELL'>('BUY');
@@ -81,11 +84,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* CTAs */}
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={onStartTrial}
+              onClick={handlePrimaryClick}
               className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-xl shadow-cyan-500/20 transition-colors flex items-center justify-center gap-2 group cursor-pointer"
               id="hero-primary-start-trial-btn"
             >
-              <span>Start 2-Day Free Trial</span>
+              <span>Get Instant Access</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button

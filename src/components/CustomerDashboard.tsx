@@ -278,9 +278,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           </div>
         )}
 
-        {/* State 2: Active 2-Day Trial */}
-        {isTrial && (
-          <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* State 2: Inactive License / No Active Plan */}
+        {(!isActive && !isPending && !isHalted && !isPastDue && !isSuspended && !isCanceled) && (
+          <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
                 <Sparkles className="w-6 h-6" />
@@ -288,20 +288,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                    2-Day Free Trial Active
+                    License Activation Required
                   </span>
                   <span className="text-[11px] px-2 py-0.2 rounded bg-cyan-900/60 text-cyan-200 font-mono">
-                    TRIALING
+                    INACTIVE
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Full access in Practice Mode enabled until{' '}
-                  <span className="text-white font-semibold">
-                    {subscription?.currentPeriodEnd
-                      ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                      : '2 days from registration'}
-                  </span>
-                  . Upgrade anytime to trade real capital.
+                  Get your Monthly or Annual Pro license to unlock instant software downloads and automated Quotex trading algorithms.
                 </div>
               </div>
             </div>
@@ -309,7 +303,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               onClick={() => setQrModalOpen(true)}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 shrink-0 shadow-md shadow-cyan-500/20 cursor-pointer"
             >
-              Scan QR & Upgrade
+              Scan QR & Activate License
             </button>
           </div>
         )}
