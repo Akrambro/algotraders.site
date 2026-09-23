@@ -11,7 +11,7 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ activeModal, onClose }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl max-h-[85vh] rounded-2xl glass-panel-glow p-6 sm:p-8 border border-slate-700/80 shadow-2xl bg-[#0b101e] flex flex-col">
+      <div className="relative w-full max-w-3xl max-h-[85vh] rounded-2xl p-6 sm:p-8 border border-slate-700/80 shadow-2xl bg-[#0b101e] flex flex-col">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -48,7 +48,7 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ activeModal, onClose }
               </div>
               <h4 className="text-sm font-bold text-white">1. No Guaranteed Profits or Returns</h4>
               <p>
-                Algo Trders.site and QBot2 Trading explicitly disclaim any promises, warranties, or representations regarding trading profits, returns on capital, or financial gains. Quantitative trading models, including the Supertrend indicator, are algorithmic tools that execute predefined mathematical parameters. They cannot predict unexpected macroeconomic events, flash crashes, regulatory announcements, or sudden liquidity shocks.
+                Algo Trders.site explicitly disclaims any promises, warranties, or representations regarding trading profits, returns on capital, or financial gains. Quantitative trading models and Quotex binary options bot algorithms are mathematical tools that execute predefined parameters. They cannot predict unexpected macroeconomic events, flash crashes, regulatory announcements, or sudden liquidity shocks.
               </p>
               <h4 className="text-sm font-bold text-white">2. Backtesting and Hypothetical Performance</h4>
               <p>
@@ -110,7 +110,7 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ activeModal, onClose }
                 We want you to be completely satisfied with QBot2 Trading. If for any reason the software does not meet your technical expectations or compatibility requirements, you may request a 100% full refund within 14 calendar days of your initial subscription purchase.
               </p>
               <p>
-                To request a refund, simply email <span className="text-cyan-400">support@algotrders.site</span> with your account email address. Refunds are processed back to your original payment method via Stripe within 3-5 business days.
+                To request a refund, simply email <span className="text-cyan-400 font-mono">algotraders.site@zohomail.in</span> with your account email address and payment screenshot. Refunds are verified and issued promptly.
               </p>
             </>
           )}

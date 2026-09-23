@@ -15,7 +15,11 @@ export const FaqSection: React.FC = () => {
     },
     {
       q: 'Can I test the algorithm without risking real money?',
-      a: 'Yes! QBot2 has native Practice Account support. You can test the Supertrend strategy, adjust ATR multipliers, and verify trade fills with 100% virtual capital before deploying to live accounts.'
+      a: 'Yes! QBot2 has native Practice Account support. You can test your Quotex trading bot, adjust binary options parameters, and verify trade execution with 100% virtual capital before deploying to live accounts.'
+    },
+    {
+      q: 'How do I pay and activate my software downloads?',
+      a: 'Click "Scan QR & Pay" on any plan. A dynamic UPI QR code is automatically generated for payee Dheeraj with your unique website Order ID embedded in the transaction note. Scan using PhonePe, Google Pay, or Paytm, complete the payment, and submit your UTR or email your screenshot to algotraders.site@zohomail.in. Our team verifies the Order ID and immediately activates your paying user software download links.'
     },
     {
       q: 'What are the system requirements for the Windows PC?',

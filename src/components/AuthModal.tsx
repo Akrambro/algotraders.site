@@ -80,14 +80,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const fillCustomerPreset = () => {
-    setEmail('trader@algotrders.site');
+    setEmail('algotraders.site@zohomail.in');
     setPassword('password123');
     setTwoFactorCode('');
     setErrorMessage(null);
   };
 
   const fillAdminPreset = () => {
-    setEmail('admin@algotrders.site');
+    setEmail('algotraders.site@zohomail.in');
     setPassword('password123');
     setTwoFactorCode('123456');
     setErrorMessage(null);
@@ -113,7 +113,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/30 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-3">
+          <div className="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-3">
             <Lock className="w-6 h-6" />
           </div>
           <h3 className="text-2xl font-bold text-white tracking-tight">
@@ -142,19 +142,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => selectTestCustomer('trader@algotrders.site')}
+                onClick={() => selectTestCustomer('algotraders.site@zohomail.in')}
                 className="px-2 py-1 rounded bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold transition-colors"
-                title="Alex Vance: Active Annual, 2 Paired Devices"
+                title="Quotex Trader: Active Plan, Paired Devices"
               >
-                Alex (Active Annual)
+                Quotex Trader
               </button>
               <button
                 type="button"
                 onClick={() => selectTestCustomer('david.kim@quantfund.io')}
                 className="px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors"
-                title="David Kim: 7-Day Trial"
+                title="David Kim: Pending Verification"
               >
-                David (Trialing)
+                David (Pending QR)
               </button>
               <button
                 type="button"
@@ -174,9 +174,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => selectTestCustomer('admin@algotrders.site', '123456')}
+                onClick={() => selectTestCustomer('algotraders.site@zohomail.in', '123456')}
                 className="px-2 py-1 rounded bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/30 text-[10px] font-semibold transition-colors"
-                title="Chief Admin: System Admin with 2FA"
+                title="Support Admin: System Admin with 2FA"
               >
                 Admin (2FA)
               </button>
@@ -287,7 +287,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-500/20 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

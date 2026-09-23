@@ -33,6 +33,7 @@ import {
 import { useAuth } from '../context/AuthContext.tsx';
 import { PairingModal } from './PairingModal.tsx';
 import { DownloadsSection } from './DownloadsSection.tsx';
+import { PaymentQRModal } from './PaymentQRModal.tsx';
 
 interface CustomerDashboardProps {
   onGoToPricing: () => void;
@@ -46,6 +47,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   const { user, token, subscription, devices, refreshUserData, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'devices' | 'downloads' | 'settings'>('overview');
   const [pairingModalOpen, setPairingModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalMessage, setPortalMessage] = useState<string | null>(null);
@@ -181,7 +183,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `algotrders_export_${user?.id || 'account'}.json`;
+      a.download = `algotraders_export_${user?.id || 'account'}.json`;
       a.click();
       setExportMessage('Data exported successfully to JSON format.');
     } catch (err) {
@@ -304,10 +306,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               </div>
             </div>
             <button
-              onClick={onGoToPricing}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 shrink-0 shadow-md shadow-cyan-500/20"
+              onClick={() => setQrModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 shrink-0 shadow-md shadow-cyan-500/20 cursor-pointer"
             >
-              Upgrade to Paid Plan
+              Scan QR & Upgrade
             </button>
           </div>
         )}
@@ -329,15 +331,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Your last subscription renewal payment failed. Please update your payment method to prevent algorithm shutoff.
+                  Your subscription renewal is pending. Please scan the payment QR code and email your screenshot to algotraders.site@zohomail.in.
                 </div>
               </div>
             </div>
             <button
-              onClick={handleManageBilling}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white shrink-0"
+              onClick={() => setQrModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white shrink-0 cursor-pointer"
             >
-              Update Payment Method
+              Pay via QR Code
             </button>
           </div>
         )}
@@ -359,15 +361,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Recurring charge retries exhausted. Trading bot authorization has been paused until subscription payment is renewed.
+                  Subscription expired. Scan the payment QR code and email your screenshot to algotraders.site@zohomail.in to re-activate.
                 </div>
               </div>
             </div>
             <button
-              onClick={handleManageBilling}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white shrink-0 shadow-lg shadow-rose-900/30"
+              onClick={() => setQrModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white shrink-0 shadow-lg shadow-rose-900/30 cursor-pointer"
             >
-              Resolve Billing
+              Scan QR & Renew
             </button>
           </div>
         )}
@@ -382,22 +384,22 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                    Subscription Pending
+                    Payment Verification Pending
                   </span>
                   <span className="text-[11px] px-2 py-0.2 rounded bg-amber-900/60 text-amber-200 font-mono">
-                    AWAITING MANDATE APPROVAL
+                    AWAITING ADMIN APPROVAL
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Your Razorpay recurring mandate authorization is pending confirmation. Hardware pairing will activate upon mandate completion.
+                  Your payment verification is under review. If you have not sent the screenshot yet, email it to <span className="text-white font-mono">algotraders.site@zohomail.in</span>. Software download links activate upon verification.
                 </div>
               </div>
             </div>
             <button
-              onClick={handleManageBilling}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0"
+              onClick={() => setQrModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0 cursor-pointer"
             >
-              Verify Mandate
+              View QR & Submit UTR
             </button>
           </div>
         )}
@@ -474,7 +476,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   Account Suspended
                 </div>
                 <div className="text-xs text-slate-200 mt-0.5">
-                  This account has been suspended by an administrator. Please contact support@algotrders.site.
+                  This account has been suspended by an administrator. Please contact algotraders.site@zohomail.in.
                 </div>
               </div>
             </div>
@@ -603,7 +605,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <div>
                 <h3 className="text-lg font-bold text-white">Getting Started Checklist</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Follow these 4 steps to deploy your QBot2 Supertrend trading engine.
+                  Follow these 4 steps to deploy your Quotex binary options trading bot engine.
                 </p>
               </div>
               <span className="text-xs font-mono text-cyan-400">
@@ -690,9 +692,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white">3. Configure Supertrend Parameters</h4>
+                    <h4 className="text-xs font-bold text-white">3. Configure Quotex Bot Parameters</h4>
                     <p className="text-[11px] text-slate-400">
-                      Define your ATR period (recommended: 10), ATR multiplier (3.0), and maximum stop loss cap.
+                      Define your binary options expiration timeframe, payout cutoff threshold, and stop-loss limits.
                     </p>
                   </div>
                 </div>
@@ -845,7 +847,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           <div className="glass-card rounded-2xl p-6 border border-slate-800">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/30 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-base">
+                <div className="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-base">
                   {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div>
@@ -1051,6 +1053,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         isOpen={pairingModalOpen}
         onClose={() => setPairingModalOpen(false)}
         onDevicePaired={refreshUserData}
+      />
+
+      {/* Payment QR Modal */}
+      <PaymentQRModal
+        isOpen={qrModalOpen}
+        onClose={() => {
+          setQrModalOpen(false);
+          refreshUserData();
+        }}
       />
     </div>
   );

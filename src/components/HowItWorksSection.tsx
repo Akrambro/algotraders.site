@@ -26,9 +26,9 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
     {
       num: '02',
       icon: CreditCard,
-      title: 'Choose a Subscription Plan',
+      title: 'Scan QR & Pay Plan',
       description:
-        'Select the monthly or discounted annual plan. Manage billing or cancel anytime with zero lock-in contracts.',
+        'Scan the UPI QR code with any UPI app, complete payment, and email screenshot to algotraders.site@zohomail.in for instant activation.',
       tag: 'Step 2'
     },
     {
@@ -50,9 +50,9 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
     {
       num: '05',
       icon: SlidersHorizontal,
-      title: 'Configure Strategy Parameters',
+      title: 'Configure Quotex Bot Parameters',
       description:
-        'Set your Supertrend ATR period, multiplier, minimum payout cutoff, and daily maximum drawdown percentage limits.',
+        'Set your binary options expiration timeframe, minimum payout cutoff (e.g. 80%), and daily maximum loss percentage limits.',
       tag: 'Step 5'
     },
     {
@@ -106,7 +106,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
         </div>
 
         {/* Callout Card */}
-        <div className="mt-14 glass-panel-glow rounded-2xl p-8 max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-14 rounded-2xl p-8 max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0c1222] border border-cyan-500/30 shadow-2xl">
           <div>
             <div className="text-xs uppercase font-mono font-bold text-cyan-400">
               Zero Cloud Key Storage

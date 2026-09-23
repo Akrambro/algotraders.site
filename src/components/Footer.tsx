@@ -1,6 +1,7 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Mail, Lock, ExternalLink, Heart } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, ExternalLink, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
+import { BrandLogo } from './BrandLogo.tsx';
 
 interface FooterProps {
   openLegalModal: (type: 'terms' | 'privacy' | 'refund' | 'risk') => void;
@@ -21,16 +22,17 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Col 1: Brand & Identity */}
           <div className="space-y-4 md:col-span-1">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                <Cpu className="w-5 h-5" />
-              </div>
-              <span className="text-lg font-bold text-white tracking-tight font-['Outfit']">
-                Algo Trders<span className="text-cyan-400">.site</span>
-              </span>
+            <div
+              onClick={() => {
+                setCurrentView('landing');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
+              className="cursor-pointer inline-block"
+            >
+              <BrandLogo size="md" />
             </div>
             <p className="text-slate-400 leading-relaxed text-xs">
-              Software provider for QBot2 Trading. High-performance Supertrend algorithmic execution on Windows PC with real-time Android mobile monitoring.
+              Software provider for Quotex trading bots and binary options algorithms. High-performance execution on Windows PC with real-time Android mobile monitoring.
             </p>
             <div className="pt-2 flex items-center gap-2 text-slate-500">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -145,19 +147,23 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <a
-                  href="mailto:support@algotrders.site"
+                  href="mailto:algotraders.site@zohomail.in"
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>support@algotrders.site</span>
+                  <span>algotraders.site@zohomail.in</span>
                 </a>
               </li>
               <li>
                 <button
-                  onClick={() => setCurrentView('admin')}
-                  className="hover:text-purple-400 transition-colors flex items-center gap-1 text-slate-500"
+                  onClick={() => {
+                    setCurrentView('admin');
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                  }}
+                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5 text-slate-400 hover:underline cursor-pointer"
+                  title="Admin Portal (Restricted Access)"
                 >
-                  <Lock className="w-3 h-3" />
+                  <Lock className="w-3.5 h-3.5 text-purple-400" />
                   <span>Admin Portal</span>
                 </button>
               </li>

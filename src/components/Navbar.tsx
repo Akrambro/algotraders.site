@@ -15,6 +15,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
+import { BrandLogo } from './BrandLogo.tsx';
 
 interface NavbarProps {
   currentView: 'landing' | 'dashboard' | 'admin' | 'docs';
@@ -56,20 +57,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <div
-          onClick={() => setCurrentView('landing')}
-          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => {
+            setCurrentView('landing');
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          }}
+          className="cursor-pointer group"
           id="navbar-brand-logo"
         >
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500/20 via-blue-600/30 to-purple-600/20 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10 group-hover:border-cyan-400/60 transition-all">
-            <Cpu className="w-5 h-5 text-cyan-400" />
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-          </div>
-          <span className="font-extrabold text-xl tracking-tight text-white font-['Outfit']">
-            Algo Trders<span className="text-cyan-400">.site</span>
-          </span>
+          <BrandLogo size="md" />
         </div>
 
         {/* Desktop Navigation */}
@@ -126,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/60 hover:border-cyan-500/50 transition-colors text-sm"
                 id="user-profile-menu-button"
               >
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider">
+                <div className="w-7 h-7 rounded-lg bg-cyan-600 flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider">
                   {user.name
                     ? user.name
                         .split(' ')
@@ -186,6 +181,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onClick={() => {
                       setCurrentView('dashboard');
                       setUserDropdownOpen(false);
+                      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                     }}
                     className={`w-full text-left px-4 py-2.5 text-xs hover:bg-slate-800/80 flex items-center gap-2.5 transition-colors ${
                       currentView === 'dashboard' ? 'text-cyan-400 bg-cyan-950/30 font-semibold' : 'text-slate-200'
@@ -195,19 +191,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     Customer Dashboard
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setCurrentView('admin');
-                      setUserDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-xs hover:bg-slate-800/80 flex items-center gap-2.5 transition-colors ${
-                      currentView === 'admin' ? 'text-purple-400 bg-purple-950/30 font-semibold' : 'text-purple-300'
-                    }`}
-                  >
-                    <Lock className="w-4 h-4 text-purple-400" />
-                    Admin Control Panel
-                  </button>
-
                   <div className="border-t border-slate-800 my-1"></div>
 
                   <button
@@ -215,6 +198,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       logout();
                       setUserDropdownOpen(false);
                       setCurrentView('landing');
+                      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                     }}
                     className="w-full text-left px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 flex items-center gap-2"
                   >
@@ -235,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 onClick={() => openAuthModal('signup')}
-                className="px-4 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-blue-400 hover:from-cyan-300 hover:to-blue-300 rounded-xl shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-xl shadow-lg shadow-cyan-500/20 transition-colors cursor-pointer"
                 id="navbar-start-trial-btn"
               >
                 Start Free Trial
@@ -305,19 +289,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => {
                 setCurrentView('dashboard');
                 setMobileMenuOpen(false);
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
               className="text-left px-3 py-2 text-sm font-medium text-cyan-400 hover:bg-slate-800/50 rounded-lg"
             >
               Customer Dashboard
-            </button>
-            <button
-              onClick={() => {
-                setCurrentView('admin');
-                setMobileMenuOpen(false);
-              }}
-              className="text-left px-3 py-2 text-sm font-medium text-purple-400 hover:bg-slate-800/50 rounded-lg"
-            >
-              Admin Dashboard
             </button>
           </div>
         </div>

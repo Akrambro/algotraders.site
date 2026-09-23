@@ -38,7 +38,7 @@ export const RiskDisclosureSection: React.FC<RiskDisclosureSectionProps> = ({
                   <strong>No Guarantee of Profit:</strong> Neither Algo Trders.site nor the QBot2 software provides investment advice, financial planning, or guaranteed returns. <em>Past algorithmic backtest performance and historical trade statistics do not guarantee or predict future results.</em> Market conditions, slippage, latency, spread widening, and unexpected liquidity shocks can adversely affect algorithm execution.
                 </p>
                 <p>
-                  <strong>Practice Account Mandate:</strong> We strongly advise all customers to thoroughly test software configurations, Supertrend multipliers, and risk constraints in a simulated practice environment prior to committing actual financial resources.
+                  <strong>Practice Account Mandate:</strong> We strongly advise all customers to thoroughly test software configurations, Quotex trading bot parameters, binary options expiration, and risk constraints in a simulated practice environment prior to committing actual financial resources.
                 </p>
               </div>
 

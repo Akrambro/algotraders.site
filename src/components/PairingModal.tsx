@@ -112,7 +112,7 @@ export const PairingModal: React.FC<PairingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-2xl glass-panel-glow p-6 sm:p-8 border border-slate-700/80 shadow-2xl bg-[#0b101e] max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg rounded-2xl p-6 sm:p-8 border border-slate-700/80 shadow-2xl bg-[#0b101e] max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
@@ -128,7 +128,7 @@ export const PairingModal: React.FC<PairingModalProps> = ({
             Pair Windows PC or Android App
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-            Authorize your device to access real-time Supertrend algorithmic trading.
+            Authorize your device to access real-time Quotex binary options bot trading.
           </p>
         </div>
 

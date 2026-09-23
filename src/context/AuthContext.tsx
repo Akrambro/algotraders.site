@@ -43,53 +43,96 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(data.user);
         setSubscription(data.subscription);
 
-        // Fetch devices
-        const devResp = await fetch('/api/devices', {
-          headers: { Authorization: `Bearer ${currentToken}` }
-        });
-        if (devResp.ok) {
-          const devData = await devResp.json();
-          setDevices(devData.devices || []);
+        // Fetch devices safely
+        try {
+          const devResp = await fetch('/api/devices', {
+            headers: { Authorization: `Bearer ${currentToken}` }
+          });
+          if (devResp.ok) {
+            const devData = await devResp.json();
+            setDevices(devData.devices || []);
+          }
+        } catch {
+          // Non-critical device sync
         }
-      } else {
-        // Token invalid
+      } else if (resp.status === 401 || resp.status === 403) {
+        // Token invalid or revoked
         localStorage.removeItem('qbot2_token');
         setToken(null);
         setUser(null);
         setSubscription(null);
       }
-    } catch (err) {
-      console.error('Failed to fetch user state:', err);
+    } catch {
+      // Network temporarily unavailable during server reload; do not crash
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // If no token exists on first load, seed with demo customer for rich out-of-the-box exploration
-    const storedToken = localStorage.getItem('qbot2_token');
-    if (!storedToken) {
-      // Auto-login to demo customer to show dashboard instantly
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'trader@algotrders.site', password: 'password123' })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.token) {
-            localStorage.setItem('qbot2_token', data.token);
-            setToken(data.token);
-            setUser(data.user);
-            setSubscription(data.subscription);
+    let mounted = true;
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('qbot2_token');
+      if (!storedToken) {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'algotraders.site@zohomail.in', password: 'password123' })
+          });
+          if (res.ok && mounted) {
+            const data = await res.json();
+            if (data.token) {
+              localStorage.setItem('qbot2_token', data.token);
+              setToken(data.token);
+              setUser(data.user);
+              setSubscription(data.subscription);
+            }
           }
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    } else {
-      refreshUserData();
-    }
+        } catch {
+          // Dev server warming up
+        } finally {
+          if (mounted) setIsLoading(false);
+        }
+      } else {
+        await refreshUserData();
+      }
+    };
+
+    initAuth();
+    return () => {
+      mounted = false;
+    };
   }, [refreshUserData]);
+
+  // Live Auto-Sync: Poll every 3 seconds and listen to window focus/visibility events
+  // so any admin approvals or subscription state updates instantly reflect on the client
+  useEffect(() => {
+    if (!token) return;
+
+    // 1. Window focus / visibility change listeners
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUserData().catch(() => {});
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    // 2. Periodic sync timer
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshUserData().catch(() => {});
+      }
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+      clearInterval(pollInterval);
+    };
+  }, [token, refreshUserData]);
 
   const login = async (email: string, password: string, twoFactorCode?: string) => {
     const res = await fetch('/api/auth/login', {
@@ -147,7 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout();
       return;
     }
-    const email = role === 'admin' ? 'admin@algotrders.site' : 'trader@algotrders.site';
+    const email = 'algotraders.site@zohomail.in';
     await login(email, 'password123', role === 'admin' ? '123456' : undefined);
   };
 

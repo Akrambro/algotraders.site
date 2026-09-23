@@ -27,6 +27,51 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
   const [downloads, setDownloads] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingPlatform, setDownloadingPlatform] = useState<'windows' | 'android' | null>(null);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+
+  const BACKEND_SOFTWARE_LINK =
+    'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkwMTUyMDY3LCJleHAiOjIxMDU1MTIwNjd9.GXDOaHDUYcuRvwT5SQVb5bPBXGnC8va84jDLuvLwDQwJPkKQbBF2fwD4ZjDiEi5up0eB43ly3ulAaRCq57UQxg';
+  const MOBILE_APK_LINK =
+    'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o';
+
+  // Trigger file download directly on the same page without redirecting or navigating to external sites
+  const handleInPageDownload = (targetUrl: string, filename: string, platform: 'windows' | 'android') => {
+    setDownloadingPlatform(platform);
+    setDownloadNotice(`Starting in-page download: ${filename}...`);
+
+    // 1. Hidden iframe: forces browser to handle response as a file download without leaving or replacing page
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.opacity = '0';
+    iframe.style.border = 'none';
+    iframe.src = targetUrl;
+    document.body.appendChild(iframe);
+
+    // 2. Hidden anchor click with HTML5 download attribute
+    const link = document.createElement('a');
+    link.href = targetUrl;
+    link.setAttribute('download', filename);
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    try {
+      link.click();
+    } catch {}
+
+    setTimeout(() => {
+      try {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        if (document.body.contains(link)) document.body.removeChild(link);
+      } catch {}
+      setDownloadingPlatform(null);
+      setDownloadNotice(`Download started! The file is downloading on this page directly to your device.`);
+      setTimeout(() => setDownloadNotice(null), 5000);
+    }, 3000);
+  };
 
   useEffect(() => {
     const fetchDownloads = async () => {
@@ -103,6 +148,13 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
         </div>
       )}
 
+      {downloadNotice && (
+        <div className="p-3.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 text-cyan-200 text-xs flex items-center gap-2.5 shadow-lg">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-cyan-400" />
+          <span className="font-medium">{downloadNotice}</span>
+        </div>
+      )}
+
       {/* Grid of Release Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Card 1: Windows PC Backend */}
@@ -119,7 +171,7 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
 
             <h3 className="text-lg font-bold text-white">QBot2 Windows Backend</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Standalone trading daemon. Runs locally on port 8000, executes Supertrend algorithms with broker connectors, and serves real-time WebSockets to the Android app.
+              Standalone trading daemon. Runs locally on port 8000, executes Quotex trading bots and binary options algorithms with broker connectors, and serves real-time WebSockets to the Android app.
             </p>
 
             <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-2 text-xs text-slate-300">
@@ -142,20 +194,30 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
 
           <div className="mt-6 pt-4 border-t border-slate-800">
             {hasEntitlement ? (
-              <a
-                href={
-                  downloads?.downloads?.find((d: any) => d.platform === 'windows')?.downloadUrl ||
-                  downloads?.windows?.url ||
-                  'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg5OTY5NDAwLCJleHAiOjE5NDc2NDk0MDB9.bg0k2noEcK2K5W1KPeEZN1l3IEjMeXJdro8aifxoK3iPDjrDTRg6ggpx7EjdRWPuXOqxzmE3ubB2okq9fOd0fg'
+              <button
+                type="button"
+                onClick={() =>
+                  handleInPageDownload(
+                    downloads?.downloads?.find((d: any) => d.platform === 'windows')?.downloadUrl || BACKEND_SOFTWARE_LINK,
+                    'QBot2-Windows.zip',
+                    'windows'
+                  )
                 }
-                target="_blank"
-                rel="noopener noreferrer"
-                download="QBot2-Windows-Backend.zip"
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+                disabled={downloadingPlatform === 'windows'}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer disabled:opacity-75"
               >
-                <Download className="w-4 h-4" />
-                <span>Download Windows Executable (ZIP)</span>
-              </a>
+                {downloadingPlatform === 'windows' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Downloading on this page...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download Windows Executable (ZIP)</span>
+                  </>
+                )}
+              </button>
             ) : (
               <button
                 disabled
@@ -205,20 +267,30 @@ export const DownloadsSection: React.FC<DownloadsSectionProps> = ({
 
           <div className="mt-6 pt-4 border-t border-slate-800">
             {hasEntitlement ? (
-              <a
-                href={
-                  downloads?.downloads?.find((d: any) => d.platform === 'android')?.downloadUrl ||
-                  downloads?.android?.url ||
-                  'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o'
+              <button
+                type="button"
+                onClick={() =>
+                  handleInPageDownload(
+                    downloads?.downloads?.find((d: any) => d.platform === 'android')?.downloadUrl || MOBILE_APK_LINK,
+                    'QBot2-Mobile-Monitor-v2.1.0.apk',
+                    'android'
+                  )
                 }
-                target="_blank"
-                rel="noopener noreferrer"
-                download="QBot2-Mobile-Monitor-v2.1.0.apk"
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-purple-500 hover:bg-purple-400 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
+                disabled={downloadingPlatform === 'android'}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-purple-500 hover:bg-purple-400 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer disabled:opacity-75"
               >
-                <Download className="w-4 h-4" />
-                <span>Download Android Mobile App (APK)</span>
-              </a>
+                {downloadingPlatform === 'android' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Downloading on this page...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download Android Mobile App (APK)</span>
+                  </>
+                )}
+              </button>
             ) : (
               <button
                 disabled

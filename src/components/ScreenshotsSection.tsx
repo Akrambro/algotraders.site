@@ -113,7 +113,7 @@ export const ScreenshotsSection: React.FC = () => {
 
                 <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
                   <div className="text-xs text-slate-400">Strategy Indicator</div>
-                  <div className="text-lg font-bold text-cyan-300 mt-1">Supertrend (10, 3.0)</div>
+                  <div className="text-lg font-bold text-cyan-300 mt-1">Quotex Binary Engine (M1)</div>
                   <div className="text-[11px] text-slate-400 mt-1">1-Min Candle Interval</div>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export const ScreenshotsSection: React.FC = () => {
                 <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-4">
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-cyan-400" />
-                    Supertrend Formula Parameters
+                    Quotex Algo Bot Parameters
                   </h4>
                   <div>
                     <label className="text-xs text-slate-400 flex justify-between">
@@ -356,7 +356,7 @@ export const ScreenshotsSection: React.FC = () => {
                   <span className="text-emerald-400">[ONLINE]</span>
                 </div>
                 <div className="text-cyan-400">
-                  INFO: [Licensing] Validating license token with cloud server: https://algotrders.site/api/license/validate
+                  INFO: [Licensing] Validating license token with cloud server: https://algotraders.site/api/license/validate
                 </div>
                 <div className="text-emerald-400">
                   INFO: [Licensing] Handshake SUCCESS. Subscription Active. Offline grace: 12 hrs.
@@ -371,7 +371,7 @@ export const ScreenshotsSection: React.FC = () => {
                   INFO: [Wi-Fi Pairing] Handshake accepted from Android client at 192.168.1.189
                 </div>
                 <div className="text-slate-400">
-                  INFO: [Strategy] Supertrend calculation engine loaded with ATR=10, Mult=3.0
+                  INFO: [Strategy] Quotex binary options algo bot engine initialized (M1 timeframe)
                 </div>
               </div>
 

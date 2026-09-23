@@ -112,6 +112,21 @@ export interface SupportNoteTable {
   created_at: string;
 }
 
+/** Table: manual_payments (QR Code Manual Payment & Screenshot Verification) */
+export interface ManualPayment {
+  id: string;
+  orderId: string;
+  userId?: string;
+  email: string;
+  planId: 'monthly' | 'annual';
+  amount: number;
+  utrNumber: string;
+  status: 'pending' | 'verified' | 'rejected';
+  notes?: string;
+  createdAt: string;
+  verifiedAt?: string;
+}
+
 // In-memory Database Store
 interface DatabaseStorage {
   users: Map<string, any>;
@@ -122,6 +137,7 @@ interface DatabaseStorage {
   webhookEvents: Map<string, WebhookEventLog>;
   auditLogs: AuditLog[];
   supportNotes: SupportNote[];
+  manualPayments: Map<string, ManualPayment>;
 }
 
 const memoryStore: DatabaseStorage = {
@@ -132,7 +148,8 @@ const memoryStore: DatabaseStorage = {
   pairingCodes: new Map(),
   webhookEvents: new Map(),
   auditLogs: [],
-  supportNotes: []
+  supportNotes: [],
+  manualPayments: new Map()
 };
 
 // ============================================================================
@@ -147,8 +164,8 @@ const oneDayMs = 86400000;
 const seedUsers: (User & { passwordHash: string })[] = [
   {
     id: 'usr_admin_demo',
-    email: 'admin@algotrders.site',
-    name: 'Chief Admin',
+    email: 'algotraders.site@zohomail.in',
+    name: 'AlgoTraders Support Admin',
     role: 'admin',
     isVerified: true,
     twoFactorEnabled: false,
@@ -157,8 +174,8 @@ const seedUsers: (User & { passwordHash: string })[] = [
   },
   {
     id: 'usr_customer_demo',
-    email: 'trader@algotrders.site',
-    name: 'Alex Vance (Pro Trader)',
+    email: 'algotraders.site@zohomail.in',
+    name: 'Quotex Trader (Demo)',
     role: 'customer',
     isVerified: true,
     twoFactorEnabled: false,
@@ -398,6 +415,20 @@ const seedSubscriptions: Subscription[] = [
 ];
 
 seedSubscriptions.forEach(s => memoryStore.subscriptions.set(s.userId, s));
+
+// Seed sample manual payment pending verification
+memoryStore.manualPayments.set('mpay_seed_01', {
+  id: 'mpay_seed_01',
+  orderId: 'ORD1024',
+  userId: 'usr_customer_david',
+  email: 'david.kim@quantfund.io',
+  planId: 'monthly',
+  amount: 4999,
+  utrNumber: '408912384729',
+  status: 'pending',
+  notes: 'Paid ₹4,999 via PhonePe to Dheeraj. Note: ORD1024. Screenshot sent to algotraders.site@zohomail.in',
+  createdAt: new Date(now - 2 * 3600000).toISOString()
+});
 
 // 3. Seed Paired Devices
 const seedDevices: Device[] = [
@@ -824,9 +855,17 @@ export const db = {
     const sub = await this.findSubscriptionById(id);
     if (!sub) return null;
 
+    const now = Date.now();
+    const isPast = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd).getTime() <= now;
+    const durationDays = sub.planId === 'annual' ? 365 : 30;
+    const currentPeriodEnd = isPast
+      ? new Date(now + durationDays * oneDayMs).toISOString()
+      : sub.currentPeriodEnd;
+
     const updated = await this.updateSubscription(sub.userId, {
       status: 'active',
-      cancelAtPeriodEnd: false
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd
     });
 
     await this.logAudit(sub.userId, 'ADMIN_SUBSCRIPTION_ACTIVATED', `Subscription ${sub.id} activated by admin`);
@@ -846,6 +885,111 @@ export const db = {
 
     await this.logAudit(sub.userId, 'ADMIN_SUBSCRIPTION_SUSPENDED', `Subscription ${sub.id} suspended by admin`);
     return updated;
+  },
+
+  // --- MANUAL QR PAYMENTS & VERIFICATION ---
+  async submitManualPayment(data: {
+    orderId?: string;
+    userId?: string;
+    email: string;
+    planId: 'monthly' | 'annual';
+    amount: number;
+    utrNumber: string;
+    notes?: string;
+  }): Promise<ManualPayment> {
+    const id = 'mpay_' + Math.random().toString(36).substring(2, 10);
+    const cleanEmail = data.email.toLowerCase().trim();
+    const orderId = data.orderId?.trim() || ('ORD' + Math.floor(1000 + Math.random() * 9000));
+    const record: ManualPayment = {
+      id,
+      orderId,
+      userId: data.userId,
+      email: cleanEmail,
+      planId: data.planId,
+      amount: data.amount,
+      utrNumber: data.utrNumber.trim(),
+      status: 'pending',
+      notes: data.notes,
+      createdAt: new Date().toISOString()
+    };
+
+    memoryStore.manualPayments.set(id, record);
+
+    // If an existing user matches, link and update subscription to pending
+    let user = data.userId ? await this.findUserById(data.userId) : await this.findUserByEmail(cleanEmail);
+    if (user) {
+      record.userId = user.id;
+      const sub = await this.getSubscription(user.id);
+      if (sub && sub.status !== 'active') {
+        await this.updateSubscription(user.id, {
+          planId: data.planId,
+          status: 'pending'
+        });
+      }
+    }
+
+    await this.logAudit(record.userId, 'MANUAL_PAYMENT_SUBMITTED', `User ${record.email} submitted payment UTR: ${record.utrNumber} for ${record.planId} (₹${record.amount})`);
+    return record;
+  },
+
+  async getAllManualPayments(): Promise<ManualPayment[]> {
+    return Array.from(memoryStore.manualPayments.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  },
+
+  async verifyManualPayment(paymentId: string): Promise<{ success: boolean; payment?: ManualPayment; user?: any; error?: string }> {
+    const payment = memoryStore.manualPayments.get(paymentId);
+    if (!payment) {
+      return { success: false, error: 'Payment verification record not found.' };
+    }
+
+    payment.status = 'verified';
+    payment.verifiedAt = new Date().toISOString();
+    memoryStore.manualPayments.set(paymentId, payment);
+
+    // Find or create the user in the database
+    let user = payment.userId ? await this.findUserById(payment.userId) : await this.findUserByEmail(payment.email);
+    if (!user) {
+      user = await this.createUser({
+        email: payment.email,
+        passwordHash: defaultPasswordHash,
+        name: payment.email.split('@')[0],
+        role: 'customer'
+      });
+      payment.userId = user.id;
+    }
+
+    // Activate subscription and unlock software downloads
+    const durationDays = payment.planId === 'annual' ? 365 : 30;
+    const maxDevices = payment.planId === 'annual' ? 3 : 2;
+
+    await this.updateSubscription(user.id, {
+      planId: payment.planId,
+      status: 'active',
+      cancelAtPeriodEnd: false,
+      maxDevices,
+      currentPeriodStart: new Date().toISOString(),
+      currentPeriodEnd: new Date(Date.now() + durationDays * oneDayMs).toISOString()
+    });
+
+    // Record verified transaction in database
+    const txId = 'tx_qr_' + Math.random().toString(36).substring(2, 10);
+    memoryStore.paymentTransactions.set(txId, {
+      id: txId,
+      userId: user.id,
+      subscriptionId: 'sub_' + user.id,
+      provider: 'razorpay',
+      amount: payment.amount * 100,
+      currency: 'INR',
+      status: 'captured',
+      method: 'UPI_QR_MANUAL',
+      createdAt: new Date().toISOString()
+    });
+
+    await this.logAudit(user.id, 'PAYMENT_VERIFIED_BY_ADMIN', `Manual payment ${payment.utrNumber} verified. User added to paying database and software downloads unlocked.`);
+
+    return { success: true, payment, user };
   },
 
   // --- PAYMENT TRANSACTIONS ---

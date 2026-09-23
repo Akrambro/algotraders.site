@@ -17,19 +17,19 @@ export const DocsView: React.FC = () => {
   const [copiedCode, setCopiedCode] = useState(false);
 
   const pythonSample = `"""
-QBot2 Trading - Windows PC Backend Licensing Integration
-File: qbot2_windows_backend_licensing.py
+Quotex Trading Bot Engine - Windows PC Backend Licensing Integration
+File: quotex_bot_windows_backend.py
 Runs locally on Windows PC (port 8000).
 Communicates with Android Mobile App over Local Wi-Fi.
-Validates licensing with https://algotrders.site/api/license/validate.
+Validates licensing with https://algotraders.site/api/license/validate.
 """
 
 from fastapi import FastAPI, HTTPException, status
 import requests, hashlib, os, datetime
 
-app = FastAPI(title="QBot2 Windows Engine")
+app = FastAPI(title="Quotex Trading Bot Engine")
 
-CLOUD_URL = "https://algotrders.site/api/license/validate"
+CLOUD_URL = "https://algotraders.site/api/license/validate"
 DEVICE_ID = "DEV-WIN-8942"
 HARDWARE_FP = "WINPC-I9-9900K"
 
@@ -49,10 +49,10 @@ def start_bot():
     if not verify_cloud_license():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Subscription inactive or expired. Renew at https://algotrders.site"
+            detail="Subscription inactive or expired. Contact algotraders.site@zohomail.in"
         )
-    # Start Supertrend strategy on local broker...
-    return {"status": "started", "strategy": "Supertrend (ATR=10, Mult=3.0)"}`;
+    # Start Quotex binary options algo bot on local broker...
+    return {"status": "started", "bot": "Quotex Binary Options Bot Active"}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(pythonSample);
@@ -83,7 +83,7 @@ def start_bot():
           <div className="text-xs font-mono text-cyan-400 uppercase">Tier 1: Cloud SaaS</div>
           <h3 className="text-lg font-bold text-white mt-1">Licensing & Auth Server</h3>
           <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-            Hosted at <code>algotrders.site</code>. Manages customer identity, Stripe billing, HMAC signed entitlement tokens, and short-lived device pairing codes. Never touches broker credentials.
+            Hosted at <code>algotraders.site</code>. Manages customer identity, manual UPI payments, HMAC signed entitlement tokens, and short-lived device pairing codes. Never touches broker credentials.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ def start_bot():
           <div className="text-xs font-mono text-blue-400 uppercase">Tier 2: Windows Engine</div>
           <h3 className="text-lg font-bold text-white mt-1">Local PC FastAPI Daemon</h3>
           <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-            Executes on port 8000 on the customer&apos;s computer. Runs Supertrend mathematical models, manages broker sockets, caches a 12-hour offline grace period, and broadcasts WebSocket telemetry.
+            Executes on port 8000 on the customer&apos;s computer. Runs Quotex trading algorithms, manages broker sockets, caches a 12-hour offline grace period, and broadcasts WebSocket telemetry.
           </p>
         </div>
 

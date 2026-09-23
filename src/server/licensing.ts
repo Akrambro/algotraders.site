@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { db } from './db.ts';
 import { LicenseValidationResponse, DownloadItem } from '../types.ts';
 
-const APP_DOWNLOAD_URL = process.env.APP_DOWNLOAD_URL || 'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg5OTY5NDAwLCJleHAiOjE5NDc2NDk0MDB9.bg0k2noEcK2K5W1KPeEZN1l3IEjMeXJdro8aifxoK3iPDjrDTRg6ggpx7EjdRWPuXOqxzmE3ubB2okq9fOd0fg';
+const APP_DOWNLOAD_URL = process.env.APP_DOWNLOAD_URL || 'https://myrqldmzekujotuvxfnb.supabase.co/storage/v1/object/sign/Qbot2%20Bundle/QBot2-Windows.zip?token=eyJraWQiOiI1ZWZmZDM4Mi0xZGE3LTQxNjQtYTAxOS1jNTNjYzQ0MWVhMDkiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJRYm90MiBCdW5kbGUvUUJvdDItV2luZG93cy56aXAiLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkwMTUyMDY3LCJleHAiOjIxMDU1MTIwNjd9.GXDOaHDUYcuRvwT5SQVb5bPBXGnC8va84jDLuvLwDQwJPkKQbBF2fwD4ZjDiEi5up0eB43ly3ulAaRCq57UQxg';
 const APK_DOWNLOAD_URL = process.env.APK_DOWNLOAD_URL || 'https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o';
 const JWT_SECRET = process.env.JWT_SECRET || 'algotrders_qbot2_production_secret_key_2026';
 
@@ -86,7 +86,7 @@ export const licensingService = {
       tradingAllowed,
       message: tradingAllowed
         ? 'License active and verified. Live algorithmic trading allowed.'
-        : `Trading disabled: Subscription status is ${sub.status}. Please renew your plan at https://algotrders.site/dashboard`,
+        : `Trading disabled: Subscription status is ${sub.status}. Please activate your plan via QR payment or contact algotraders.site@zohomail.in`,
       signature
     };
   },
@@ -105,7 +105,7 @@ export const licensingService = {
         sha256: '9f83a0a3841029c786a34bcf93f54817a0b0ea37e8c33a921d74a106f34582f1',
         changelog: [
           'Direct local port 8000 WebSocket engine for ultra-low latency',
-          'Automated Supertrend ATR calculation pipeline',
+          'Automated Quotex binary options calculation pipeline',
           'Encrypted local storage for broker API secrets',
           'Added automatic cloud license validation handshake'
         ]
@@ -122,7 +122,7 @@ export const licensingService = {
         sha256: '3a8820f861b5c479374c43d83ee662b66299b9cfecba5c3d4f40f2b38062953a',
         changelog: [
           'Automatic discovery of Windows PC on local Wi-Fi',
-          'Live candlestick charting with Supertrend overlays',
+          'Live candlestick charting with binary options indicator overlays',
           'One-tap emergency trading pause and asset filter toggles',
           'Push notifications for executed trades and daily risk limits'
         ]
@@ -135,7 +135,7 @@ export const licensingService = {
         filename: 'QBot2-Setup-And-Network-Guide.pdf',
         size: '2.4 MB',
         releaseDate: '2026-03-12',
-        downloadUrl: hasActiveEntitlement ? 'https://docs.algotrders.site/QBot2-Setup-Guide.pdf' : '',
+        downloadUrl: hasActiveEntitlement ? 'https://docs.algotraders.site/QBot2-Setup-Guide.pdf' : '',
         sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         changelog: [
           'Windows Firewall port 8000 exception setup',
@@ -151,11 +151,11 @@ export const licensingService = {
         filename: 'QBot2-Changelog-v2.4.1.pdf',
         size: '1.1 MB',
         releaseDate: '2026-03-18',
-        downloadUrl: hasActiveEntitlement ? 'https://docs.algotrders.site/QBot2-Changelog.pdf' : '',
+        downloadUrl: hasActiveEntitlement ? 'https://docs.algotraders.site/QBot2-Changelog.pdf' : '',
         sha256: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
         changelog: [
           'Full security review audit results',
-          'Supertrend algorithm parameter backtest benchmarks',
+          'Quotex binary options algorithm parameter backtest benchmarks',
           'Broker API latency benchmarks'
         ]
       }

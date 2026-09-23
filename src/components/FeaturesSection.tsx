@@ -15,10 +15,10 @@ export const FeaturesSection: React.FC = () => {
   const features = [
     {
       icon: TrendingUp,
-      title: 'Supertrend Strategy Engine',
+      title: 'Quotex Binary Options Engine',
       description:
-        'Proven algorithmic logic based on Average True Range (ATR). Automatically calculates volatility bands, identifies trend shifts, and executes entries without emotion.',
-      badge: 'Core Algorithm',
+        'High-speed automated binary options execution designed for Quotex trading. Automatically analyzes candlestick behavior, confirms trend direction, and fires binary contracts with microsecond precision.',
+      badge: 'Quotex Algo Bot',
       color: 'cyan'
     },
     {

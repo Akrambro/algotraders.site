@@ -25,7 +25,7 @@ import {
 import { useAuth } from '../context/AuthContext.tsx';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, token, switchUserRoleDemo } = useAuth();
+  const { user, token, switchUserRoleDemo, refreshUserData } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [webhooks, setWebhooks] = useState<any[]>([]);
@@ -34,6 +34,8 @@ export const AdminDashboard: React.FC = () => {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [dbStatus, setDbStatus] = useState<any>(null);
   const [isTestingDb, setIsTestingDb] = useState<boolean>(false);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
+  const [verifyingPaymentId, setVerifyingPaymentId] = useState<string | null>(null);
 
   const handleExportSupabaseSQL = async () => {
     try {
@@ -93,11 +95,12 @@ export const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const [mRes, uRes, wRes, dbRes] = await Promise.all([
+      const [mRes, uRes, wRes, dbRes, pRes] = await Promise.all([
         fetch('/api/admin/metrics', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/webhooks', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/database/status')
+        fetch('/api/database/status'),
+        fetch('/api/admin/pending-payments', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (mRes.ok) setMetrics(await mRes.json());
@@ -112,6 +115,10 @@ export const AdminDashboard: React.FC = () => {
       if (dbRes.ok) {
         const dbData = await dbRes.json();
         setDbStatus(dbData);
+      }
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        setPendingPayments(pData.payments || []);
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -153,6 +160,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Subscription activated successfully.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -167,6 +175,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Subscription suspended.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -181,6 +190,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Customer suspended.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -195,6 +205,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Customer reactivated.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -213,6 +224,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Granted 30 days promotional access.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -228,6 +240,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await resp.json();
       setActionMessage(data.message || 'Device revoked.');
       await fetchAdminData();
+      await refreshUserData();
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -260,10 +273,36 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleVerifyManualPayment = async (paymentId: string) => {
+    setVerifyingPaymentId(paymentId);
+    try {
+      const resp = await fetch('/api/admin/verify-manual-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ paymentId })
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setActionMessage('Manual payment approved! User subscription activated and software downloads unlocked.');
+        await fetchAdminData();
+        await refreshUserData();
+      } else {
+        setActionMessage(data.error || 'Failed to verify payment.');
+      }
+    } catch (err: any) {
+      setActionMessage(err.message || 'Error verifying manual payment.');
+    } finally {
+      setVerifyingPaymentId(null);
+    }
+  };
+
   // If not logged in as admin, show role gate with 1-click switch button
   if (!user || user.role !== 'admin') {
     return (
-      <div className="max-w-md mx-auto my-20 p-8 rounded-2xl glass-panel-glow border border-purple-500/30 text-center">
+      <div className="max-w-md mx-auto my-20 p-8 rounded-2xl bg-[#0b1220] border border-purple-500/30 text-center">
         <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-4 border border-purple-500/40">
           <Lock className="w-7 h-7" />
         </div>
@@ -304,7 +343,7 @@ export const AdminDashboard: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Global customer licensing, Razorpay billing webhooks, and device hardware telemetry.
+            Global customer licensing, manual UPI payments, and device hardware telemetry.
           </p>
         </div>
 
@@ -436,8 +475,114 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Manual UPI Payment Verification Queue (QR Code Scans) */}
+      <div className="rounded-2xl p-6 border border-cyan-500/40 bg-[#091124] shadow-2xl mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-white">Manual UPI Payment Verification Queue</h3>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40">
+                {pendingPayments.filter((p) => p.status === 'pending').length} PENDING APPROVAL
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              Customers scan QR code & send screenshot to <strong className="text-cyan-300 select-all">algotraders.site@zohomail.in</strong>. Verify UTR / Screenshot and approve below to unlock software downloads.
+            </p>
+          </div>
+
+          <button
+            onClick={fetchAdminData}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Check Incoming</span>
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900 text-slate-400 uppercase font-mono text-[10px]">
+              <tr>
+                <th className="py-3 px-3">Order ID (tn/tr)</th>
+                <th className="py-3 px-3">Submission Time</th>
+                <th className="py-3 px-3">Customer Email</th>
+                <th className="py-3 px-3">Plan / Amount</th>
+                <th className="py-3 px-3">UTR / Ref #</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3 text-right">Verification Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 font-mono">
+              {pendingPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-6 text-center text-slate-500 font-sans">
+                    No manual payments in queue. All QR code scans are up to date.
+                  </td>
+                </tr>
+              ) : (
+                pendingPayments.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="py-3 px-3 font-mono font-extrabold text-cyan-400 text-xs select-all">
+                      {p.orderId || 'ORD1024'}
+                    </td>
+                    <td className="py-3 px-3 text-slate-400 text-[11px]">
+                      {new Date(p.createdAt).toLocaleString()}
+                    </td>
+                    <td className="py-3 px-3 font-sans font-medium text-white">
+                      {p.email || p.userEmail}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="font-bold text-cyan-300">
+                        {p.planId === 'annual' ? 'Yearly (₹49,999)' : 'Monthly (₹4,999)'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-amber-300 font-bold select-all">
+                      {p.utrNumber}
+                    </td>
+                    <td className="py-3 px-3">
+                      {p.status === 'verified' ? (
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold">
+                          VERIFIED & ACTIVE
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                          PENDING SCREENSHOT
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      {p.status === 'verified' ? (
+                        <span className="text-[11px] text-emerald-400 font-sans">Software Activated</span>
+                      ) : (
+                        <button
+                          onClick={() => handleVerifyManualPayment(p.id)}
+                          disabled={verifyingPaymentId === p.id}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                        >
+                          {verifyingPaymentId === p.id ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Approving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>Approve & Activate Software</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Customer Management Section */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-700/80 shadow-2xl mb-8">
+      <div className="rounded-2xl p-6 border border-slate-800 bg-[#090e1a] shadow-2xl mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-800">
           <div>
             <h3 className="text-lg font-bold text-white">Customer Account Management</h3>
@@ -565,7 +710,7 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-white">Payment & Subscription Webhook Audit Log</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Idempotent event processing for Razorpay Subscriptions and Cashfree Gateway events.
+              Idempotent event processing for subscription and payment events.
             </p>
           </div>
           <span className="text-xs font-mono text-emerald-400">Idempotency Guard Active</span>
@@ -612,7 +757,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Support Note Modal */}
       {selectedUserForNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl glass-panel-glow p-6 bg-[#0c1220] border border-slate-700">
+          <div className="w-full max-w-md rounded-2xl p-6 bg-[#0c1220] border border-slate-700 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-1">Add Support Note</h3>
             <p className="text-xs text-slate-400 mb-4">
               Internal memo for customer: <span className="text-cyan-400">{selectedUserForNote.email}</span>

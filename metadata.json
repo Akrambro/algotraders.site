@@ -1,6 +1,6 @@
 {
   "name": "Algo Trders.site",
-  "description": "Production-quality SaaS platform for QBot2 Trading algorithmic software with Windows PC execution, Android mobile monitoring, and subscription licensing.",
+  "description": "Automated Quotex trading bot and binary options algo execution platform. Run institutional-grade Quotex bots on Windows PC and monitor trades on Android mobile.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

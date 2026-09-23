@@ -22,6 +22,36 @@ function MainApp() {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | 'refund' | 'risk' | null>(null);
 
+  // Dynamic SEO Page Title & Description update based on active view
+  useEffect(() => {
+    let title = 'Algo Trders.site – Quotex Trading Bot & Binary Options Algorithms';
+    let desc = 'Automated Quotex trading bot and binary options algo execution platform. Run institutional-grade Quotex bots on Windows PC and monitor trades on Android mobile.';
+
+    if (currentView === 'dashboard') {
+      title = 'Customer Dashboard – Algo Trders.site | Software Downloads & License Hub';
+      desc = 'Manage your QBot2 Quotex bot subscription, view real-time binary options telemetry, pair hardware devices, and download the latest Windows & Android releases.';
+    } else if (currentView === 'admin') {
+      title = 'Admin Portal – Algo Trders.site | License Management & Telemetry Control';
+      desc = 'Administrative control panel for Algo Trders Quotex trading bots, user licensing, manual payment verification, and server telemetry.';
+    } else if (currentView === 'docs') {
+      title = 'Developer & Integration Docs – Algo Trders.site | QBot2 API & Protocol';
+      desc = 'Complete technical documentation, local daemon API reference, WebSocket protocol guide, and Python/FastAPI integration blueprints for QBot2 Quotex Bots.';
+    }
+
+    document.title = title;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', desc);
+    }
+  }, [currentView]);
+
+  // Scroll to top immediately whenever page/view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [currentView]);
+
   // Sync hash routing if present (e.g. #dashboard, #admin)
   useEffect(() => {
     const handleHash = () => {
