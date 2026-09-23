@@ -54,9 +54,9 @@ export const AdminLoginGate: React.FC<AdminLoginGateProps> = ({ onBackToHome }) 
               Restricted Area • Production Portal
             </span>
 
-            <h2 className="text-2xl font-extrabold text-white tracking-tight mt-3">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight mt-3">
               Admin Control Portal
-            </h2>
+            </h1>
             <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
               Enter authorized administrator credentials to manage customer licenses, verify manual UPI payments, and monitor system telemetry.
             </p>

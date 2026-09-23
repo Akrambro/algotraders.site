@@ -30,10 +30,14 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   };
 
   return (
-    <div className={`flex items-center gap-3 select-none ${className}`}>
+    <div
+      className={`flex items-center gap-3 select-none ${className}`}
+      aria-label="Algo Trders.site - Quotex Trading Bot & Binary Options Algorithms Logo"
+    >
       {/* Visual Logo Mark */}
       <div
         className={`relative ${iconSizes[size]} rounded-xl bg-gradient-to-br from-[#0c1e38] via-[#081528] to-[#040a14] border border-cyan-500/40 flex items-center justify-center shadow-lg shadow-cyan-500/15 group-hover:border-cyan-400 group-hover:shadow-cyan-500/25 transition-all duration-300`}
+        aria-hidden="true"
       >
         {/* Subtle inner grid pattern glow */}
         <div className="absolute inset-0.5 rounded-[10px] bg-gradient-to-tr from-cyan-500/10 via-transparent to-blue-500/15 pointer-events-none" />
