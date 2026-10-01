@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { getSupabaseClient } from './supabase.ts';
-import type { User, Subscription, Device, PaymentTransaction, AdminMetrics, AuditLog, SupportNote, ManualPayment } from '../types.ts';
+import type { User, Subscription, Device, PaymentTransaction, AdminMetrics, AuditLog, SupportNote } from '../types.ts';
 import { getSubscriptionStatus, hasActiveSubscription } from '../subscriptions.ts';
 
 export class DatabaseError extends Error {
@@ -36,7 +36,7 @@ export async function result<T = any>(query: PromiseLike<{ data: T; error: null 
     }
     throw new DatabaseError(error.message || 'Database operation failed', error.code);
   }
-  return data;
+  return data as T;
 }
 
 const camel = (row: any): any => row && Object.fromEntries(Object.entries(row).map(([key, value]) => [key.replace(/_([a-z])/g, (_, ch) => ch.toUpperCase()), value]));
@@ -213,7 +213,7 @@ memory.auditLogs.push(
     id: 'aud_init_01',
     userId: 'usr_admin_akram',
     action: 'SYSTEM_INITIALIZED',
-    details: 'Algo Trders QBot2 system ready. Admin portal protected.',
+    details: 'Algo Trders QBot2 unified database ready. Admin portal protected.',
     timestamp: new Date().toISOString()
   }
 );
@@ -228,7 +228,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_users').select('*').eq('email', cleanEmail).maybeSingle());
+        const row = await result(client.from('users').select('*').eq('email', cleanEmail).maybeSingle());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase findUserByEmail fallback:', err.message);
@@ -246,7 +246,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_users').select('*').eq('id', id).maybeSingle());
+        const row = await result(client.from('users').select('*').eq('id', id).maybeSingle());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase findUserById fallback:', err.message);
@@ -257,18 +257,55 @@ export const db = {
 
   async createUser(data: { email: string; passwordHash: string; name?: string; role?: 'customer' | 'admin' }) {
     const cleanEmail = data.email.trim().toLowerCase();
+    const cleanName = data.name?.trim() || cleanEmail.split('@')[0];
+    const userRole = data.role || (cleanEmail === 'akrambro11@gmail.com' ? 'admin' : 'customer');
     const client = database();
+
     if (client) {
       try {
-        const row = await result(client.rpc('qbot_register_user', {
-          p_email: cleanEmail,
-          p_password_hash: data.passwordHash,
-          p_name: data.name || cleanEmail.split('@')[0]
-        }));
-        if (row) {
-          const u = safeUser(row);
-          memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
-          return u;
+        // Try stored procedure first
+        try {
+          const res = await result(client.rpc('register_user', {
+            p_email: cleanEmail,
+            p_password_hash: data.passwordHash,
+            p_name: cleanName
+          }));
+          if (res?.user) {
+            const u = safeUser(res.user);
+            memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
+            if (res.subscription) memory.subscriptions.set(u.id, camel(res.subscription));
+            return u;
+          }
+        } catch {
+          // Direct table insert fallback
+          const userRow = await result(client.from('users').insert({
+            email: cleanEmail,
+            password_hash: data.passwordHash,
+            name: cleanName,
+            role: userRole,
+            is_verified: true,
+            two_factor_enabled: false
+          }).select().single());
+
+          if (userRow) {
+            const u = safeUser(userRow);
+            memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
+            
+            // Create subscription record
+            const subRow = await result(client.from('subscriptions').insert({
+              user_id: u.id,
+              plan_id: 'monthly',
+              status: 'active',
+              provider: 'manual',
+              current_period_start: new Date().toISOString(),
+              current_period_end: new Date(Date.now() + 30 * oneDayMs).toISOString(),
+              cancel_at_period_end: false,
+              max_devices: 1
+            }).select().single());
+            if (subRow) memory.subscriptions.set(u.id, camel(subRow));
+
+            return u;
+          }
         }
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase createUser fallback:', err.message);
@@ -279,8 +316,8 @@ export const db = {
     const user: User & { passwordHash: string } = {
       id,
       email: cleanEmail,
-      name: data.name || cleanEmail.split('@')[0],
-      role: data.role || (cleanEmail === 'akrambro11@gmail.com' ? 'admin' : 'customer'),
+      name: cleanName,
+      role: userRole,
       isVerified: true,
       twoFactorEnabled: false,
       createdAt: new Date().toISOString(),
@@ -292,10 +329,10 @@ export const db = {
       id: 'sub_' + id,
       userId: id,
       planId: 'monthly',
-      status: 'inactive',
+      status: 'active',
       provider: 'manual',
       currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date().toISOString(),
+      currentPeriodEnd: new Date(Date.now() + 30 * oneDayMs).toISOString(),
       cancelAtPeriodEnd: false,
       maxDevices: 1,
       createdAt: new Date().toISOString()
@@ -314,7 +351,7 @@ export const db = {
     );
     if (client) {
       try {
-        const row = await result(client.from('qbot_users').update({ ...snake(allowed), updated_at: new Date().toISOString() }).eq('id', id).select().maybeSingle());
+        const row = await result(client.from('users').update({ ...snake(allowed), updated_at: new Date().toISOString() }).eq('id', id).select().maybeSingle());
         if (row) {
           const u = camel(row);
           const curr = memory.users.get(id);
@@ -338,7 +375,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        await result(client.from('qbot_users').delete().eq('id', id));
+        await result(client.from('users').delete().eq('id', id));
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase deleteUser fallback:', err.message);
       }
@@ -355,7 +392,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_users').select('*').order('created_at', { ascending: false }));
+        const rows = await result<any[]>(client.from('users').select('*').order('created_at', { ascending: false }));
         if (rows && rows.length > 0) return rows.map(safeUser);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAllUsers fallback:', err.message);
@@ -368,7 +405,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_subscriptions').select('*').eq('user_id', userId).maybeSingle());
+        const row = await result(client.from('subscriptions').select('*').eq('user_id', userId).maybeSingle());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getSubscription fallback:', err.message);
@@ -381,7 +418,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_subscriptions').select('*'));
+        const rows = await result<any[]>(client.from('subscriptions').select('*'));
         if (rows && rows.length > 0) return rows.map(camel);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAllSubscriptions fallback:', err.message);
@@ -394,7 +431,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const found = await result(client.from('qbot_subscriptions').select('*').eq('id', id).maybeSingle());
+        const found = await result(client.from('subscriptions').select('*').eq('id', id).maybeSingle());
         if (found) return camel(found);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase findSubscriptionById fallback:', err.message);
@@ -415,7 +452,7 @@ export const db = {
     );
     if (client) {
       try {
-        const row = await result(client.from('qbot_subscriptions').update({ ...snake(allowed), updated_at: new Date().toISOString() }).eq('user_id', userId).select().single());
+        const row = await result(client.from('subscriptions').update({ ...snake(allowed), updated_at: new Date().toISOString() }).eq('user_id', userId).select().single());
         if (row) {
           const sub = camel(row);
           memory.subscriptions.set(userId, sub);
@@ -459,7 +496,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_manual_payments').insert({
+        const row = await result(client.from('manual_payments').insert({
           order_id: data.orderId || crypto.randomUUID(),
           user_id: customer?.id || null,
           email: cleanEmail,
@@ -494,7 +531,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_manual_payments').select('*').order('created_at', { ascending: false }));
+        const rows = await result<any[]>(client.from('manual_payments').select('*').order('created_at', { ascending: false }));
         if (rows && rows.length > 0) return rows.map(camel);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAllManualPayments fallback:', err.message);
@@ -509,7 +546,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const data = await result(client.rpc('qbot_approve_payment', { p_payment_id: paymentId, p_admin_id: adminId }));
+        const data = await result(client.rpc('approve_manual_payment', { p_payment_id: paymentId, p_admin_id: adminId }));
         if (data) {
           return { success: true, payment: camel(data.payment), user: camel(data.user), alreadyVerified: data.alreadyVerified };
         }
@@ -528,7 +565,7 @@ export const db = {
     payment.verifiedBy = adminId;
     memory.manualPayments.set(paymentId, payment);
 
-    let user = payment.userId ? await this.findUserById(payment.userId) : await this.findUserByEmail(payment.email);
+    let user: (User & { passwordHash?: string }) | null = payment.userId ? await this.findUserById(payment.userId) : await this.findUserByEmail(payment.email);
     if (!user) {
       user = await this.createUser({
         email: payment.email,
@@ -536,17 +573,17 @@ export const db = {
         name: payment.email.split('@')[0],
         role: 'customer'
       });
-      payment.userId = user.id;
     }
-
+    const customerUser = user as User;
+    payment.userId = customerUser.id;
     const durationDays = payment.planId === 'annual' ? 365 : 30;
-    const sub = await this.getSubscription(user.id);
+    const sub = await this.getSubscription(customerUser.id);
     const baseEnd = sub && new Date(sub.currentPeriodEnd).getTime() > Date.now()
       ? new Date(sub.currentPeriodEnd).getTime()
       : Date.now();
     const newEnd = new Date(baseEnd + durationDays * oneDayMs).toISOString();
 
-    await this.updateSubscription(user.id, {
+    await this.updateSubscription(customerUser.id, {
       planId: payment.planId,
       status: 'active',
       cancelAtPeriodEnd: false,
@@ -555,20 +592,11 @@ export const db = {
       currentPeriodEnd: newEnd
     });
 
-    await this.logAudit(user.id, 'PAYMENT_APPROVED', `Payment ${payment.utrNumber} verified for ${payment.email}`);
-    return { success: true, payment, user: safeUser(user), alreadyVerified: false };
+    await this.logAudit(customerUser.id, 'PAYMENT_APPROVED', `Payment ${payment.utrNumber} verified for ${payment.email}`);
+    return { success: true, payment, user: safeUser(customerUser), alreadyVerified: false };
   },
 
   async grantPromo(userId: string, days: number, adminId: string): Promise<Subscription> {
-    const client = database();
-    if (client) {
-      try {
-        const row = await result(client.rpc('qbot_grant_promo', { p_user_id: userId, p_days: days, p_admin_id: adminId }));
-        if (row) return camel(row);
-      } catch (err: any) {
-        if (!isSchemaError(err)) console.warn('[DB] Supabase grantPromo fallback:', err.message);
-      }
-    }
     const sub = await this.getSubscription(userId);
     const baseEnd = sub && new Date(sub.currentPeriodEnd).getTime() > Date.now()
       ? new Date(sub.currentPeriodEnd).getTime()
@@ -586,7 +614,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_payment_transactions').insert(snake(data)).select().single());
+        const row = await result(client.from('payment_transactions').insert(snake(data)).select().single());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase recordPaymentTransaction fallback:', err.message);
@@ -606,7 +634,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_payment_transactions').select('*'));
+        const rows = await result<any[]>(client.from('payment_transactions').select('*'));
         if (rows && rows.length > 0) return rows.map(camel);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAllPaymentTransactions fallback:', err.message);
@@ -624,7 +652,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_devices').select('*').eq('user_id', userId).neq('status', 'revoked'));
+        const rows = await result<any[]>(client.from('devices').select('*').eq('user_id', userId).neq('status', 'revoked'));
         if (rows && rows.length > 0) return rows.map(row => ({ ...camel(row), hardwareFingerprint: row.machine_hash }));
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getDevicesByUser fallback:', err.message);
@@ -637,7 +665,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_devices').select('*').neq('status', 'revoked'));
+        const rows = await result<any[]>(client.from('devices').select('*').neq('status', 'revoked'));
         if (rows && rows.length > 0) return rows.map(row => ({ ...camel(row), hardwareFingerprint: row.machine_hash }));
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAllActiveDevices fallback:', err.message);
@@ -646,19 +674,12 @@ export const db = {
     return Array.from(memory.devices.values()).filter(d => d.status !== 'revoked');
   },
 
-  async createPairingCode(_userId: string, _deviceType?: string): Promise<any> {
-    throw new Error('Enter the seller-issued license key in the Windows bot. Website pairing codes have been retired.');
-  },
-
-  async verifyAndConsumePairingCode(_code: string, _name: string, _fingerprint?: string, _ip?: string): Promise<Device | null> {
-    throw new Error('Update QBot2 and activate using your license key.');
-  },
-
   async revokeDevice(deviceId: string, actorId: string) {
     const client = database();
     if (client) {
       try {
-        return await result<boolean>(client.rpc('qbot_revoke_device', { p_device_id: deviceId, p_actor_id: actorId }));
+        await result(client.from('devices').update({ status: 'revoked' }).eq('id', deviceId));
+        return true;
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase revokeDevice fallback:', err.message);
       }
@@ -674,7 +695,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_webhook_events').select('id').eq('event_id', eventId).maybeSingle());
+        const row = await result(client.from('webhook_events').select('id').eq('event_id', eventId).maybeSingle());
         return Boolean(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase isWebhookEventProcessed fallback:', err.message);
@@ -687,7 +708,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        return await result(client.from('qbot_webhook_events').upsert({ event_id: eventId, event_type: eventType, status, summary, payload }, { onConflict: 'event_id' }));
+        return await result(client.from('webhook_events').upsert({ event_id: eventId, event_type: eventType, status, summary, payload }, { onConflict: 'event_id' }));
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase logWebhookEvent fallback:', err.message);
       }
@@ -700,7 +721,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_webhook_events').select('*').order('processed_at', { ascending: false }).limit(limit));
+        const rows = await result<any[]>(client.from('webhook_events').select('*').order('processed_at', { ascending: false }).limit(limit));
         if (rows && rows.length > 0) return rows.map(camel);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getRecentWebhookEvents fallback:', err.message);
@@ -713,7 +734,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_audit_logs').insert({ user_id: userId, action, details, ip_address: ipAddress }).select().single());
+        const row = await result(client.from('audit_logs').insert({ user_id: userId, action, details, ip_address: ipAddress }).select().single());
         if (row) return audit(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase logAudit fallback:', err.message);
@@ -735,7 +756,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_audit_logs').select('*').order('created_at', { ascending: false }).limit(limit));
+        const rows = await result<any[]>(client.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(limit));
         if (rows && rows.length > 0) return rows.map(audit);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getAuditLogs fallback:', err.message);
@@ -748,7 +769,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const rows = await result<any[]>(client.from('qbot_support_notes').select('*').eq('user_id', userId).order('created_at'));
+        const rows = await result<any[]>(client.from('support_notes').select('*').eq('user_id', userId).order('created_at'));
         if (rows && rows.length > 0) return rows.map(camel);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getSupportNotes fallback:', err.message);
@@ -761,7 +782,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('qbot_support_notes').insert({ user_id: userId, author, content }).select().single());
+        const row = await result(client.from('support_notes').insert({ user_id: userId, author, content }).select().single());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase addSupportNote fallback:', err.message);
