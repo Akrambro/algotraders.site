@@ -228,7 +228,7 @@ export const db = {
     const client = database();
     if (client) {
       try {
-        const row = await result(client.from('users').select('*').eq('email', cleanEmail).maybeSingle());
+        const row = await result(client.from('users').select('*').ilike('email', cleanEmail).maybeSingle());
         if (row) return camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase findUserByEmail fallback:', err.message);
