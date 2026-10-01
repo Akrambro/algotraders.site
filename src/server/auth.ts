@@ -4,7 +4,11 @@ import bcrypt from 'bcryptjs';
 import { db } from './db.ts';
 import { User } from '../types.ts';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'algotrders_qbot2_production_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET is required when NODE_ENV=production');
+}
+const signingSecret = JWT_SECRET || 'development-only-secret-change-me';
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
@@ -27,14 +31,14 @@ export const authService = {
         email: user.email,
         role: user.role
       },
-      JWT_SECRET,
+      signingSecret,
       { expiresIn: '7d' }
     );
   },
 
   verifyToken(token: string): any {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, signingSecret);
     } catch {
       return null;
     }

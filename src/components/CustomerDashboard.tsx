@@ -591,9 +591,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </div>
 
             <div className="glass-card rounded-2xl p-5 border border-slate-800">
-              <div className="text-xs text-slate-400">Offline Grace Period</div>
-              <div className="text-2xl font-bold font-mono text-cyan-300 mt-1">12 Hours</div>
-              <div className="mt-2 text-[11px] text-slate-400">Automatic local fallback cache</div>
+              <div className="text-xs text-slate-400">Online license check</div>
+              <div className="text-2xl font-bold font-mono text-cyan-300 mt-1">Required at start</div>
+              <div className="mt-2 text-[11px] text-slate-400">New trades require current authorization</div>
             </div>
           </div>
 
@@ -634,7 +634,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-white">1. Download & Extract Windows Backend</h4>
                     <p className="text-[11px] text-slate-400">
-                      Get the standalone ZIP from the Downloads tab and launch <code>qbot2_engine.exe</code>.
+                      Get the current licensed ZIP from the seller and launch <code>QBotBackend.exe</code>.
                     </p>
                   </div>
                 </div>
@@ -663,7 +663,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-white">2. Pair Windows PC Hardware</h4>
                     <p className="text-[11px] text-slate-400">
-                      Generate a 6-digit activation code and authorize your PC installation.
+                      Enter the license key sent by the seller after your payment is approved.
                     </p>
                   </div>
                 </div>
@@ -762,7 +762,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                 onClick={() => setPairingModalOpen(true)}
                 className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 cursor-pointer"
               >
-                Generate Pairing Code
+                Activation help
               </button>
             </div>
           ) : (

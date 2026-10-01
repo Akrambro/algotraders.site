@@ -66,26 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // If no token exists on first load, seed with demo customer for rich out-of-the-box exploration
+    // Never auto-login a demo account in production. Customers must explicitly
+    // authenticate with their own account.
     const storedToken = localStorage.getItem('qbot2_token');
     if (!storedToken) {
-      // Auto-login to demo customer to show dashboard instantly
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'trader@algotrders.site', password: 'password123' })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.token) {
-            localStorage.setItem('qbot2_token', data.token);
-            setToken(data.token);
-            setUser(data.user);
-            setSubscription(data.subscription);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
+      setIsLoading(false);
     } else {
       refreshUserData();
     }

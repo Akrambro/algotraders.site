@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { db } from './src/server/db.ts';
+import { db, pool } from './src/server/db.ts';
 import {
   authService,
   authenticateToken,
@@ -19,7 +19,9 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
+
+  await pool.query('SELECT 1');
 
   // JSON Body Parser with raw body preservation for webhook verification
   app.use(
@@ -117,9 +119,7 @@ async function startServer() {
             message: 'Two-factor authentication code required.'
           });
         }
-        if (twoFactorCode !== '123456' && twoFactorCode !== '654321') {
-          return res.status(401).json({ error: 'Invalid two-factor authentication code.' });
-        }
+        return res.status(501).json({ error: 'Two-factor authentication verification is not configured yet. Contact support.' });
       }
 
       const { passwordHash, ...safeUser } = user;
@@ -205,7 +205,7 @@ async function startServer() {
 
     res.json({
       twoFactorEnabled: new2FAState,
-      message: new2FAState ? '2FA enabled successfully. Default test code is 123456.' : '2FA disabled.'
+      message: new2FAState ? '2FA enabled flag saved; authenticator verification must be configured before using it.' : '2FA disabled.'
     });
   });
 
@@ -348,45 +348,8 @@ async function startServer() {
     });
   });
 
-  // POST /api/devices/generate-code
-  app.post('/api/devices/generate-code', authenticateToken, pairLimiter, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { deviceType } = req.body;
-      const session = await db.createPairingCode(req.user!.id, deviceType || 'windows_backend');
-      res.json(session);
-    } catch (err: any) {
-      res.status(500).json({ error: 'Failed to generate pairing activation code.' });
-    }
-  });
-
-  // POST /api/devices/pair (Called by Windows backend, Android App, or Web Simulator)
-  app.post('/api/devices/pair', pairLimiter, async (req: Request, res: Response) => {
-    try {
-      const { code, deviceName, hardwareFingerprint, ipAddress } = req.body;
-
-      if (!code) {
-        return res.status(400).json({ error: 'Activation pairing code is required.' });
-      }
-
-      const device = await db.verifyAndConsumePairingCode(
-        code,
-        deviceName || 'Windows-QBot2-Host',
-        hardwareFingerprint,
-        ipAddress || req.ip
-      );
-
-      if (!device) {
-        return res.status(400).json({ error: 'Invalid or expired activation code.' });
-      }
-
-      res.status(201).json({
-        message: 'Device successfully paired and authorized.',
-        device
-      });
-    } catch (err: any) {
-      console.error('Pairing error:', err);
-      res.status(400).json({ error: err.message || 'Device pairing failed.' });
-    }
+  app.post(['/api/devices/generate-code', '/api/devices/pair'], pairLimiter, (_req, res) => {
+    res.status(410).json({error: 'Website pairing is retired. Use the current licensed QBot2 release and a seller-issued QB2 license key.'});
   });
 
   // DELETE /api/devices/:id
@@ -407,22 +370,9 @@ async function startServer() {
   // DOWNLOADS (ENTITLEMENT-GATED)
   // ==========================================
 
-  // GET /api/downloads
-  app.get('/api/downloads', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-    const sub = await db.getSubscription(req.user!.id);
-    const now = new Date();
-    const periodEnd = sub ? new Date(sub.currentPeriodEnd) : new Date(0);
-    const isEntitled =
-      sub !== null &&
-      (sub.status === 'active' || sub.status === 'trialing') &&
-      now <= periodEnd;
-
-    const downloads = licensingService.getAvailableDownloads(isEntitled);
-    res.json({
-      isEntitled,
-      subscriptionStatus: sub?.status || 'none',
-      downloads
-    });
+  app.all(['/api/downloads', '/api/downloads/file/:platform'], (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(410).json({error: 'Legacy downloads are retired. Contact the seller for the current licensed release.', downloads: [], isEntitled: false});
   });
 
   // ==========================================
