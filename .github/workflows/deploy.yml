@@ -16,11 +16,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Check out the Windows licensing client for interoperability tests
-        uses: actions/checkout@v4
-        with:
-          repository: Akrambro/QuotexBot_saleversion
-          path: .test-artifacts/client
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,7 +28,9 @@ jobs:
       - run: npm run lint
       - run: npm test
         env:
-          QBOT_TEST_CLIENT_ROOT: ${{ github.workspace }}/.test-artifacts/client
+          # The real client lives in a private repository. Its own workflow runs
+          # the full suite against the pinned public website submodule.
+          QBOT_TEST_SKIP_CLIENT_INTEROP: '1'
       - run: npm run build
       - run: node tests/production-start.mjs
 

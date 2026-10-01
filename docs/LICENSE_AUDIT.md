@@ -10,6 +10,8 @@ Current validation passed: website TypeScript, all 36 website/database/API tests
 
 The popup screenshot and browser results in `.test-artifacts/website-license-audit/` use disposable fixtures. These checks did not issue a production key, migrate Supabase or verify private production settings. The deployment observations below are from the original 30 September audit.
 
+GitHub validation runs the 35 independent website tests in this public repository. The real Python interoperability test runs with the full 36-test suite in the private bot repository against its pinned website submodule. This avoids attempting to read the private client with the public website's repository-scoped token.
+
 ## Deployment finding
 
 The deployed licensing host, `https://algotraders-ena2.onrender.com`, still serves the older website. Read-only checks returned:

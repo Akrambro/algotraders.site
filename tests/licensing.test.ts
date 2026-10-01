@@ -418,7 +418,10 @@ test('HTTP administration requires real signed login tokens and current database
   } finally {lookup.mock.restore();}
 });
 
-test('real Python client activates, restarts without a key, rejects copying, and renews over HTTP', async () => {
+test('real Python client activates, restarts without a key, rejects copying, and renews over HTTP', {
+  skip: process.env.QBOT_TEST_SKIP_CLIENT_INTEROP === '1'
+    ? 'Run by the private Windows client repository against its pinned website submodule.' : false
+}, async () => {
   const issued=await issue();
   await withHttp(async url=>{
     const script=process.env.QBOT_TEST_CLIENT_ROOT
