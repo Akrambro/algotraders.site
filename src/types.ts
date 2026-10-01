@@ -14,7 +14,7 @@ export type SubscriptionStatus =
 
 export type PlanId = 'trial' | 'monthly' | 'annual';
 
-export type PaymentProviderType = 'razorpay' | 'cashfree';
+export type PaymentProviderType = 'razorpay' | 'cashfree' | 'manual';
 
 export interface User {
   id: string;
@@ -77,6 +77,26 @@ export interface Device {
   pairedAt: string;
 }
 
+export interface LicenseRecord {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  key_prefix: string;
+  status: 'issued' | 'active' | 'revoked';
+  device_id: string | null;
+  expires_at: string;
+  issued_at: string;
+  activated_at: string | null;
+  revoked_at: string | null;
+  device?: {
+    id: string;
+    device_name: string;
+    machine_hash: string;
+    status: DeviceStatus;
+    last_heartbeat_at: string;
+  } | null;
+}
+
 export interface PairingSession {
   code: string;
   expiresAt: string;
@@ -114,6 +134,7 @@ export interface AdminMetrics {
   failedPayments: number;
   mrr: number;
   activeDevicesCount: number;
+  activeLicenses: number;
 }
 
 export interface AuditLog {

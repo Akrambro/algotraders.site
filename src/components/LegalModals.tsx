@@ -75,9 +75,9 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ activeModal, onClose }
               <p>
                 You agree not to modify, reverse-engineer, decompile, disassemble, or circumvent the cryptographic licensing validation routines, activation code mechanisms, or HMAC signatures embedded within the software.
               </p>
-              <h4 className="text-sm font-bold text-white">3. Subscription Billing & Automatic Renewals</h4>
+              <h4 className="text-sm font-bold text-white">3. Subscription Periods & Renewals</h4>
               <p>
-                Subscriptions are billed in advance on a recurring monthly or annual basis. You may cancel your subscription at any time via the Customer Dashboard. Upon cancellation, your access remains valid through the conclusion of your paid period.
+                Subscriptions are prepaid through manually verified payments. Monthly payments add 30 days and annual payments add 365 days. No automatic renewal charge is made. Renewal requires another approved payment and a new seller-issued key; the current key retains its original expiry until the replacement is activated.
               </p>
               <h4 className="text-sm font-bold text-white">4. Limitation of Liability</h4>
               <p>

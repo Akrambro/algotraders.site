@@ -27,11 +27,11 @@ export const FaqSection: React.FC = () => {
     },
     {
       q: 'What happens if my internet disconnects during trading?',
-      a: 'QBot2 includes a 12-hour offline grace period for subscription entitlement. In addition, all orders placed by the bot are automatically submitted with hard broker-side stop-loss orders to protect your capital in case of an unexpected connectivity failure.'
+      a: 'Starting the bot requires an online license check. An already running session can use the remainder of its current authorization, for at most 15 minutes and never beyond the paid expiry. If authorization expires, new trades stop while existing trade monitoring continues. Broker connectivity is still required to place or monitor orders.'
     },
     {
       q: 'How do I cancel my subscription?',
-      a: 'You can cancel your subscription at any time with a single click from the Customer Dashboard. Once canceled, your access remains active until the end of your prepaid billing period, and no further charges will be billed.'
+      a: 'Payments are prepaid and verified manually. There are no automatic charges. Your access ends at the paid expiry unless you renew. To renew, submit a new payment and enter the new key supplied by the seller. Contact support for billing or cancellation help.'
     }
   ];
 

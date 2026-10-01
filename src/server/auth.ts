@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { db } from './db.ts';
 import { User } from '../types.ts';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'algotrders_qbot2_production_secret_key_2026';
+const configuredSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) throw new Error('A unique JWT_SECRET of at least 32 characters is required.');
+const JWT_SECRET = configuredSecret || crypto.randomBytes(48).toString('hex');
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
@@ -28,27 +31,30 @@ export const authService = {
         role: user.role
       },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '1d', algorithm: 'HS256', issuer: 'algotraders-web', audience: 'algotraders-dashboard' }
     );
   },
 
   verifyToken(token: string): any {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], issuer: 'algotraders-web', audience: 'algotraders-dashboard' });
     } catch {
       return null;
     }
   }
 };
 
-// Rate limiter map to protect login, pairing, and license verification
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
 export function createRateLimiter(maxRequests: number = 20, windowMs: number = 60000) {
+  const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+  let nextCleanup = 0;
   return (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || req.socket.remoteAddress || 'anonymous';
     const key = `${req.path}:${ip}`;
     const now = Date.now();
+    if (now >= nextCleanup) {
+      for (const [entry,record] of rateLimitMap) if (record.resetAt <= now) rateLimitMap.delete(entry);
+      nextCleanup = now + windowMs;
+    }
 
     const record = rateLimitMap.get(key);
     if (!record || now > record.resetAt) {
@@ -85,7 +91,9 @@ export async function authenticateToken(
     return res.status(401).json({ error: 'Invalid or expired access token.' });
   }
 
-  const user = await db.findUserById(payload.id);
+  let user;
+  try { user = await db.findUserById(payload.id); }
+  catch { return res.status(503).json({ error: 'Account database temporarily unavailable.' }); }
   if (!user) {
     return res.status(401).json({ error: 'User account no longer exists.' });
   }

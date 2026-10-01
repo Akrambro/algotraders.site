@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
+import {hasActiveSubscription} from '../subscriptions.ts';
 
 interface NavbarProps {
   currentView: 'landing' | 'dashboard' | 'admin' | 'docs';
@@ -34,9 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const isSubActive =
-    subscription &&
-    (subscription.status === 'active' || subscription.status === 'trialing');
+  const isSubActive = hasActiveSubscription(subscription);
 
   const scrollToSection = (sectionId: string) => {
     if (currentView !== 'landing') {
@@ -134,13 +133,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <span
                   className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                    subscription?.status === 'active'
+                    isSubActive
                       ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
                       : 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
                   }`}
                 >
-                  {subscription?.status === 'active'
-                    ? subscription.planId === 'annual'
+                  {isSubActive
+                    ? subscription?.planId === 'annual'
                       ? 'Annual Pro'
                       : 'Monthly Pro'
                     : 'Starter'}
@@ -158,14 +157,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="mt-1 flex items-center gap-1.5">
                       <span
                         className={`inline-block w-2 h-2 rounded-full ${
-                          subscription?.status === 'active'
+                          isSubActive
                             ? 'bg-emerald-400'
                             : 'bg-amber-400'
                         }`}
                       />
                       <span className="text-xs font-semibold text-slate-200 capitalize">
-                        {subscription?.status === 'active'
-                          ? `${subscription.planId === 'annual' ? 'Annual Pro' : 'Monthly Pro'} License`
+                        {isSubActive
+                          ? `${subscription?.planId === 'annual' ? 'Annual Pro' : 'Monthly Pro'} License`
                           : 'Starter (License Required)'}
                       </span>
                     </div>

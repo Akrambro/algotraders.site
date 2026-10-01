@@ -25,10 +25,9 @@ interface PaymentQRModalProps {
   initialPlan?: 'monthly' | 'annual';
 }
 
-// Function to generate unique website Order ID (e.g. ORD1024)
+// A receipt reference should not collide after a few dozen customers.
 const generateOrderId = (): string => {
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
-  return `ORD${randomNum}`;
+  return `ORD-${crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()}`;
 };
 
 export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
@@ -69,13 +68,17 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
     }
   }, [initialPlan]);
 
-  // When modal is newly opened, generate a fresh order ID if not already set & reset timer
+  // Reopening for a renewal must not retain the previous successful submission.
   useEffect(() => {
     if (isOpen) {
-      if (!orderId) {
-        setOrderId(generateOrderId());
-      }
+      setOrderId(generateOrderId());
       setTimeLeft(300);
+      setEmailInput(user?.email || '');
+      setUtrNumber('');
+      setNotes('');
+      setSubmitSuccess(false);
+      setErrorMessage(null);
+      setOrderRefreshedNotice(false);
     }
   }, [isOpen]);
 
@@ -166,7 +169,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
       setErrorMessage('Please enter your registered email address.');
       return;
     }
-    if (!utrNumber.trim()) {
+    if (!/^\d{12}$/.test(utrNumber.trim())) {
       setErrorMessage('Please enter your 12-digit UPI UTR / Reference Number.');
       return;
     }

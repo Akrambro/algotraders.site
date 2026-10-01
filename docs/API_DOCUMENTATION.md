@@ -1,73 +1,51 @@
-# Algo Trders.site - QBot2 Licensing & Cloud API Documentation
+# QBot2 licensing and downloads API
 
-Base URL: `https://algotrders.site/api`
+Client license API base URL and JWT issuer: `https://algotraders-ena2.onrender.com`. A custom website domain must route to that same current service; the Windows client pins the issuer and bundled public key. Website routes require `Authorization: Bearer <login token>` where marked. Registration creates an inactive account; approved manual payment grants a paid subscription. Download entitlement and device activation are separate checks.
 
-## Authentication
+## Windows activation
 
-All protected endpoints require the HTTP header:
-`Authorization: Bearer <jwt_token>`
+The seller issues a private `QB2-...` key after approving payment. Enter it in `QBotBackend.exe` or the Android activation screen connected to that PC. There are no browser-generated activation codes. One Windows PC can be active at a time; renewal or moving PCs requires a new seller-issued key.
 
-### Endpoints
-
-| Method | Path | Description | Access |
+| Method | Path | Behavior | Access |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Register new customer account (7-day free trial auto-provisioned) | Public |
-| `POST` | `/api/auth/login` | Authenticate customer or admin. Returns JWT & 2FA prompt if enabled | Public |
-| `GET` | `/api/auth/me` | Fetch authenticated user profile & active device count | Authenticated |
-| `POST` | `/api/auth/toggle-2fa` | Enable/Disable two-factor authentication | Authenticated |
-| `GET` | `/api/auth/export-data` | GDPR/Privacy data export in JSON | Authenticated |
-| `POST` | `/api/auth/delete-account` | GDPR right-to-be-forgotten deletion | Authenticated |
+| POST | `/api/license/challenge` | Obtain a short-lived challenge for a device identity | Rate limited |
+| POST | `/api/license/activate` | Redeem a seller-issued key with a signed challenge and PC identity | Device proof |
+| POST | `/api/license/refresh` | Refresh the existing PC's authorization | Device proof |
+| GET | `/api/auth/me` | Current account, subscription, devices and that customer's license summaries; never raw keys or key hashes | Login |
+| GET | `/api/devices` | List the account's registered devices | Login |
+| DELETE | `/api/devices/:id` | Atomically revoke an owned device and its bound keys | Login |
+| POST | `/api/devices/generate-code`, `/api/devices/pair` | Retired; returns HTTP 410 with activation guidance | No pairing performed |
 
----
+`/api/license/validate` and `/api/license/heartbeat` accept the current signed refresh protocol. The old device-ID-only protocol cannot authorize trading. Use `licensing_client.py` from the main project for the challenge/signature protocol; the old Python example in this docs folder is retired.
 
-## Subscriptions & Billing
-
-| Method | Path | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/subscription` | Get current plan, entitlement status, device limits | Authenticated |
-| `POST` | `/api/billing/create-checkout-session` | Create Stripe checkout session for `monthly` or `annual` | Authenticated |
-| `POST` | `/api/billing/create-customer-portal` | Open Stripe Customer Portal for billing management | Authenticated |
-| `POST` | `/api/webhooks/stripe` | Server-side Stripe webhook processor with signature validation | Stripe only |
-
----
-
-## Device Pairing
-
-| Method | Path | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/devices` | List user's paired devices with IP and heartbeat | Authenticated |
-| `POST` | `/api/devices/generate-code` | Generates a 6-digit short-lived activation code (e.g., `QB-8942`) | Authenticated |
-| `POST` | `/api/devices/pair` | Validates activation code from Windows backend or Android app | Rate-limited |
-| `DELETE` | `/api/devices/:id` | Revokes device authorization immediately | Authenticated |
-
----
+Successful activation/refresh returns an RS256-signed authorization bound to the PC's identity and subscription. The Windows client verifies it with the bundled public key. Starting trading requires an online check. Existing authorization lasts at most 15 minutes, bounded by paid expiry; there is no 12-hour offline entitlement.
 
 ## Downloads
 
-| Method | Path | Description | Access |
+| Method | Path | Behavior | Access |
 |---|---|---|---|
-| `GET` | `/api/downloads` | Returns authorized download links for Windows backend and Android APK if user has active entitlement | Authenticated |
+| GET | `/api/downloads` | Entitlement and Windows/Android metadata; links are empty unless the release is configured and the account is entitled | Login |
+| GET | `/api/downloads/file/windows` | Verified licensed Windows ZIP attachment | Login and active paid period |
+| GET | `/api/downloads/file/android` | Verified Android APK attachment | Login and active paid period |
 
----
+Only explicit `LICENSED_WINDOWS_DOWNLOAD_*` / `LICENSED_ANDROID_DOWNLOAD_*` settings are used. HTTPS URLs and full SHA-256 hashes are required. Returned URLs point to the authenticated same-site endpoints. Storage URLs are not exposed in the catalog. File bytes are sent only after full checksum verification and a second subscription check.
 
-## QBot2 PC Backend Licensing Verification
+Missing or invalid authentication returns 401; absent, trial, future, expired or suspended entitlement returns 403 on file requests. Unknown platforms return 404. Missing release configuration, storage failures, corrupt bytes or database failures return 503. Downloads are not cached and never redirect to a fallback artifact.
 
-| Method | Path | Description | Access |
+## License administration
+
+| Method | Path | Behavior | Access |
 |---|---|---|---|
-| `POST` | `/api/license/validate` | Validates `deviceId` & `hardwareFingerprint`, returns signed `tradingAllowed` flag and grace period | Windows PC Engine |
-| `POST` | `/api/license/heartbeat` | Periodic ping to record last seen status and client IP | Windows PC Engine |
+| GET | `/api/admin/licenses` | List licenses, optionally filtered by `userId`; no raw keys returned | Current database admin role |
+| GET | `/api/admin/audit-logs` | Latest 50 account, payment and licensing events | Current database admin role |
+| POST | `/api/admin/verify-manual-payment` | Approve `paymentId` once; returns customer and `alreadyVerified`, without issuing a key | Current database admin role |
+| POST | `/api/admin/licenses` | Issue a key for `userId` after payment approval; raw key returned once | Current database admin role |
+| POST | `/api/admin/licenses/:id/revoke` | Revoke a license | Current database admin role |
 
----
+Keep raw license keys private. Deliver them to the correct customer after payment verification. They are not download tokens or website login tokens.
 
-## Admin Endpoints (RBAC: `role === 'admin'`)
+Issuance accepts `{ "userId": "customer-id" }`. The server generates the key, commits its SHA-256 hash to Supabase `qbot_licenses.key_hash` with the customer's `user_id`, and then returns HTTP 201 with `{ licenseKey, license, message }` and `Cache-Control: no-store`. The customer's name and email live in the referenced `qbot_users` row. Database failure returns HTTP 503 without a key. Neither raw keys nor hashes are returned by list/account endpoints; only this successful creation response contains the full key. No Firebase service is involved.
 
-| Method | Path | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/admin/metrics` | System overview: ARR, MRR, subscriptions, active devices | Admin only |
-| `GET` | `/api/admin/users` | List all accounts with device and subscription details | Admin only |
-| `POST` | `/api/admin/users/:id/suspend` | Suspend customer access | Admin only |
-| `POST` | `/api/admin/users/:id/reactivate` | Reactivate customer access | Admin only |
-| `POST` | `/api/admin/users/:id/grant-promo` | Add free promotional days to customer subscription | Admin only |
-| `DELETE` | `/api/admin/devices/:id` | Admin revocation of any device | Admin only |
-| `GET` | `/api/admin/webhooks` | Audit logs of incoming Stripe webhook events | Admin only |
-| `POST` | `/api/admin/support-notes` | Add admin support memo to customer profile | Admin only |
+License summaries contain the masked prefix, raw lifecycle state (`issued`, `active`, `revoked`), key expiry and optional registered-PC metadata (`id`, `device_name`, `machine_hash`, `status`, `last_heartbeat_at`). Expiry is evaluated against the timestamp; an `active` database row is not proof of an unexpired subscription. A renewal payment extends the subscription, while an existing key keeps its own expiry until replacement activation.
+
+`POST /api/admin/users/:id/grant-promo` accepts integer `days` from 1 through 365 and records an atomic promotional extension. Reactivation endpoints reject expired or future subscriptions without granting time. Unknown API paths return JSON 404; unavailable password-reset and 2FA routes return 501; retired payment simulation and browser-pairing routes return 410.

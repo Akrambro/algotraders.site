@@ -8,3 +8,21 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: APP_URL
+        value: https://algotraders-ena2.onrender.com
+      - key: SUPABASE_URL
+        value: https://myrqldmzekujotuvxfnb.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: LICENSE_PRIVATE_KEY_B64
+        sync: false
+      - key: LICENSED_WINDOWS_DOWNLOAD_URL
+        sync: false
+      - key: LICENSED_ANDROID_DOWNLOAD_URL
+        sync: false
+      - key: LICENSED_WINDOWS_DOWNLOAD_SHA256
+        sync: false
+      - key: LICENSED_ANDROID_DOWNLOAD_SHA256
+        sync: false

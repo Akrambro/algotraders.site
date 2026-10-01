@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, Subscription, Device } from '../types.ts';
+import { User, Subscription, Device, LicenseRecord } from '../types.ts';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   subscription: Subscription | null;
   devices: Device[];
+  licenses: LicenseRecord[];
+  syncError: string | null;
   isLoading: boolean;
   login: (email: string, password: string, twoFactorCode?: string) => Promise<{ requires2FA?: boolean; message?: string }>;
   register: (email: string, password: string, name?: string) => Promise<void>;
@@ -21,6 +23,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('qbot2_token'));
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshUserData = useCallback(async () => {
@@ -29,6 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSubscription(null);
       setDevices([]);
+      setLicenses([]);
+      setToken(null);
       setIsLoading(false);
       return;
     }
@@ -40,30 +46,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (resp.ok) {
         const data = await resp.json();
+        if (localStorage.getItem('qbot2_token') !== currentToken) return;
         setUser(data.user);
         setSubscription(data.subscription);
-
-        // Fetch devices safely
-        try {
-          const devResp = await fetch('/api/devices', {
-            headers: { Authorization: `Bearer ${currentToken}` }
-          });
-          if (devResp.ok) {
-            const devData = await devResp.json();
-            setDevices(devData.devices || []);
-          }
-        } catch {
-          // Non-critical device sync
-        }
+        setDevices(data.devices || []);
+        setLicenses(data.licenses || []);
+        setSyncError(null);
       } else if (resp.status === 401 || resp.status === 403) {
+        if (localStorage.getItem('qbot2_token') !== currentToken) return;
         // Token invalid or revoked
         localStorage.removeItem('qbot2_token');
         setToken(null);
         setUser(null);
         setSubscription(null);
+        setDevices([]);
+        setLicenses([]);
+      } else {
+        setSyncError('Status could not be refreshed. Check your connection and try again.');
       }
     } catch {
-      // Network temporarily unavailable during server reload; do not crash
+      setSyncError('Status could not be refreshed. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -74,26 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       const storedToken = localStorage.getItem('qbot2_token');
       if (!storedToken) {
-        try {
-          const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: 'algotraders.site@zohomail.in', password: 'password123' })
-          });
-          if (res.ok && mounted) {
-            const data = await res.json();
-            if (data.token) {
-              localStorage.setItem('qbot2_token', data.token);
-              setToken(data.token);
-              setUser(data.user);
-              setSubscription(data.subscription);
-            }
-          }
-        } catch {
-          // Dev server warming up
-        } finally {
-          if (mounted) setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       } else {
         await refreshUserData();
       }
@@ -154,6 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(data.token);
     setUser(data.user);
     setSubscription(data.subscription);
+    setLicenses([]);
+    setDevices([]);
     await refreshUserData();
     return {};
   };
@@ -174,6 +159,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(data.token);
     setUser(data.user);
     setSubscription(data.subscription);
+    setLicenses([]);
+    setDevices([]);
     await refreshUserData();
   };
 
@@ -183,15 +170,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSubscription(null);
     setDevices([]);
+    setLicenses([]);
+    setSyncError(null);
   };
 
   const switchUserRoleDemo = async (role: 'customer' | 'admin' | 'guest') => {
-    if (role === 'guest') {
-      logout();
-      return;
-    }
-    const email = 'algotraders.site@zohomail.in';
-    await login(email, 'password123', role === 'admin' ? '123456' : undefined);
+    if (role === 'guest') { logout(); return; }
+    throw new Error('Sign in with your own account. Demo accounts are disabled.');
   };
 
   return (
@@ -201,6 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         subscription,
         devices,
+        licenses,
+        syncError,
         isLoading,
         login,
         register,

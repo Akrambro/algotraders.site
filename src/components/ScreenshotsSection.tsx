@@ -359,7 +359,7 @@ export const ScreenshotsSection: React.FC = () => {
                   INFO: [Licensing] Validating license token with cloud server: https://algotraders.site/api/license/validate
                 </div>
                 <div className="text-emerald-400">
-                  INFO: [Licensing] Handshake SUCCESS. Subscription Active. Offline grace: 12 hrs.
+                  INFO: [Licensing] PC license verified. Authorization: up to 15 minutes, capped by paid expiry.
                 </div>
                 <div className="text-slate-400">
                   INFO: [Network] Bound to interface 192.168.1.145:8000

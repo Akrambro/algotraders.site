@@ -28,7 +28,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
       icon: CreditCard,
       title: 'Scan QR & Pay Plan',
       description:
-        'Scan the UPI QR code with any UPI app, complete payment, and email screenshot to algotraders.site@zohomail.in for instant activation.',
+        'Scan the UPI QR code, complete payment, and submit your payment reference. After approval, the seller provides your private QB2 license key.',
       tag: 'Step 2'
     },
     {
@@ -42,9 +42,9 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onGetStart
     {
       num: '04',
       icon: Wifi,
-      title: 'Pair Phone to Local PC Wi-Fi',
+      title: 'Connect and Activate Your PC',
       description:
-        'Launch the Windows backend to see your local LAN IP (e.g., 192.168.1.145:8000). Enter this into the mobile app to pair securely.',
+        'Run QBotBackend.exe and enter your license key, or connect Android to your PC address on the same trusted Wi-Fi and enter the key on its activation screen.',
       tag: 'Step 4'
     },
     {

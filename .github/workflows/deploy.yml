@@ -1,22 +1,41 @@
-name: Deploy Website to InfinityFree
+name: Validate licensed website
 
 on:
   push:
-    branches:
-      - main # Change to 'master' if your default branch uses that name
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  web-deploy:
-    name: Deploying via FTP
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-    - name: Get latest code
-      uses: actions/checkout@v4
-      
-    - name: Upload files to FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-      with:
-        server: ${{ secrets.FTP_SERVER || 'ftpupload.net' }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /htdocs/ # Directs files straight to your public directory
+      - uses: actions/checkout@v4
+      - name: Check out the Windows licensing client for interoperability tests
+        uses: actions/checkout@v4
+        with:
+          repository: Akrambro/QuotexBot_saleversion
+          path: .test-artifacts/client
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --legacy-peer-deps
+      - run: python -m pip install 'PyJWT[crypto]>=2.10,<3' 'cryptography>=44' requests
+      - run: npm run lint
+      - run: npm test
+        env:
+          QBOT_TEST_CLIENT_ROOT: ${{ github.workspace }}/.test-artifacts/client
+      - run: npm run build
+      - run: node tests/production-start.mjs
+
+# Deploy the built Node service through Render using render.yaml.
+# Uploading this source to a public FTP directory cannot run the licensing API.

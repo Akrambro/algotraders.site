@@ -11,11 +11,11 @@ interface MySQLConfig {
 
 export const getMySQLConfig = (): MySQLConfig => {
   return {
-    host: process.env.MYSQL_HOST || 'sql313.infinityfree.com',
+    host: process.env.MYSQL_HOST || '',
     port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-    user: process.env.MYSQL_USER || 'if0_42963020',
-    password: process.env.MYSQL_PASSWORD || 'RWq7haWqgPnbpp',
-    database: process.env.MYSQL_DATABASE || 'if0_42963020_algotraders'
+    user: process.env.MYSQL_USER || '',
+    password: process.env.MYSQL_PASSWORD || '',
+    database: process.env.MYSQL_DATABASE || ''
   };
 };
 

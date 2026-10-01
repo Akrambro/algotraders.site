@@ -70,7 +70,7 @@ export const PricingSection: React.FC<PricingSectionProps> = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Android mobile monitor pairing (Up to 2 devices)</span>
+                  <span>1 Windows PC with an Android companion</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -115,7 +115,7 @@ export const PricingSection: React.FC<PricingSectionProps> = () => {
               </div>
               <h3 className="text-2xl font-bold text-white">Annual Pro License</h3>
               <p className="text-xs text-slate-300 mt-2">
-                The complete algorithmic suite with maximum hardware pairing capacity, priority updates, and institutional risk parameters.
+                A full year of access for your Windows PC and Android companion, with priority updates and configurable risk controls.
               </p>
 
               <div className="mt-6 flex items-baseline gap-2">
@@ -130,7 +130,7 @@ export const PricingSection: React.FC<PricingSectionProps> = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-semibold text-cyan-300">Multi-device pairing: 3 authorized hardware slots</span>
+                  <span className="font-semibold text-cyan-300">1 Windows PC with an Android companion</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -172,7 +172,7 @@ export const PricingSection: React.FC<PricingSectionProps> = () => {
                   <br />
                   2. Complete payment via PhonePe / GPay / Paytm & submit screenshot.
                   <br />
-                  3. License activates immediately upon verification.
+                  3. After approval, enter the seller-issued key to activate your PC.
                 </p>
               </div>
             </div>

@@ -31,9 +31,11 @@ import {
   Fingerprint
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { PairingModal } from './PairingModal.tsx';
-import { DownloadsSection } from './DownloadsSection.tsx';
+import { ActivationHelp } from './ActivationHelp.tsx';
+import { DownloadsSection } from './LicensedDownloads.tsx';
 import { PaymentQRModal } from './PaymentQRModal.tsx';
+import {CustomerLicenseStatus} from './CustomerLicenseStatus.tsx';
+import {getSubscriptionStatus, hasActiveSubscription} from '../subscriptions.ts';
 
 interface CustomerDashboardProps {
   onGoToPricing: () => void;
@@ -44,7 +46,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   onGoToPricing,
   onOpenDocs
 }) => {
-  const { user, token, subscription, devices, refreshUserData, logout } = useAuth();
+  const { user, token, subscription, devices, licenses, syncError, refreshUserData, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'devices' | 'downloads' | 'settings'>('overview');
   const [pairingModalOpen, setPairingModalOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -128,31 +130,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
     }
   };
 
-  // Razorpay / Payment Provider Customer Portal
-  const handleManageBilling = async () => {
-    setPortalLoading(true);
-    setPortalMessage(null);
-    try {
-      const resp = await fetch('/api/billing/customer-portal', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await resp.json();
-      if (resp.ok && data.url) {
-        if (data.mode === 'simulated_dev' || data.mode === 'in_app_portal') {
-          setPortalMessage(data.message || 'Subscription details and entitlements are active.');
-        } else {
-          window.location.href = data.url;
-        }
-      } else {
-        setPortalMessage(data.error || 'Could not open billing portal.');
-      }
-    } catch (err: any) {
-      setPortalMessage(err.message || 'Error opening billing portal.');
-    } finally {
-      setPortalLoading(false);
-    }
-  };
+  const handleManageBilling = () => setQrModalOpen(true);
 
   // 2FA toggle
   const handleToggle2FA = async () => {
@@ -162,13 +140,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Two-factor enrollment is unavailable.');
       if (resp.ok) {
         setTwoFactorEnabled(data.twoFactorEnabled);
         setTwoFactorMessage(data.message);
         await refreshUserData();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setTwoFactorMessage(err.message);
     }
   };
 
@@ -179,6 +158,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not export your data.');
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -186,19 +166,19 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       a.download = `algotraders_export_${user?.id || 'account'}.json`;
       a.click();
       setExportMessage('Data exported successfully to JSON format.');
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setExportMessage(err.message);
     }
   };
 
   // Calculate banner status
-  const subStatus = subscription?.status || 'none';
-  const isCanceled = subscription?.cancelAtPeriodEnd;
+  const subStatus = getSubscriptionStatus(subscription);
+  const isCanceled = hasActiveSubscription(subscription) && subscription?.cancelAtPeriodEnd;
   const isTrial = subStatus === 'trialing';
   const isActive = subStatus === 'active';
   const isPending = subStatus === 'pending';
   const isHalted = subStatus === 'halted';
-  const isPastDue = subStatus === 'past_due';
+  const isPastDue = subStatus === 'past_due' || subStatus === 'unpaid';
   const isExpired = subStatus === 'canceled' || subStatus === 'expired';
   const isSuspended = subStatus === 'suspended';
 
@@ -216,7 +196,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Manage your QBot2 subscription entitlement, pair Windows/Android hardware, and download releases.
+            Manage your subscription, activate your Windows PC, and download the Android companion app.
           </p>
         </div>
 
@@ -227,7 +207,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             id="dashboard-pair-device-btn"
           >
             <Plus className="w-4 h-4" />
-            <span>Pair New Device</span>
+            <span>Activation instructions</span>
           </button>
           <button
             onClick={refreshUserData}
@@ -258,7 +238,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Your QBot2 license is verified and healthy. Renews on{' '}
+                  Your subscription is active. Paid until{' '}
                   <span className="text-white font-semibold">
                     {subscription?.currentPeriodEnd
                       ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
@@ -273,13 +253,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               disabled={portalLoading}
               className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors shrink-0"
             >
-              Manage Billing
+              Renew subscription
             </button>
           </div>
         )}
 
         {/* State 2: Inactive License / No Active Plan */}
-        {(!isActive && !isPending && !isHalted && !isPastDue && !isSuspended && !isCanceled) && (
+        {(['inactive', 'none', 'trialing'].includes(subStatus)) && (
           <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
@@ -432,7 +412,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         )}
 
         {/* State 5: Expired / No Plan */}
-        {(isExpired || subStatus === 'none') && (
+        {isExpired && (
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
@@ -483,6 +463,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           </div>
         )}
       </div>
+
+      {syncError && <p role="alert" className="mb-4 text-sm text-amber-200">{syncError}</p>}
+      <CustomerLicenseStatus licenses={licenses} subscription={subscription} onActivate={() => setPairingModalOpen(true)} />
 
       {/* Navigation Sub-Tabs */}
       <div className="flex border-b border-slate-800 mb-8 overflow-x-auto">
@@ -541,7 +524,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <div className="text-xs text-slate-400">Active Devices Limit</div>
               <div className="text-2xl font-bold font-mono text-white mt-1">
                 {devices.length}{' '}
-                <span className="text-xs text-slate-500">/ {subscription?.maxDevices || 2} Allowed</span>
+                <span className="text-xs text-slate-500">/ 1 Windows PC</span>
               </div>
               <div className="mt-2 text-[11px] text-cyan-400">
                 {devices.length === 0 ? 'No paired hardware yet' : 'Hardware within plan limits'}
@@ -587,9 +570,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </div>
 
             <div className="glass-card rounded-2xl p-5 border border-slate-800">
-              <div className="text-xs text-slate-400">Offline Grace Period</div>
-              <div className="text-2xl font-bold font-mono text-cyan-300 mt-1">12 Hours</div>
-              <div className="mt-2 text-[11px] text-slate-400">Automatic local fallback cache</div>
+              <div className="text-xs text-slate-400">Online license check</div>
+              <div className="text-2xl font-bold font-mono text-cyan-300 mt-1">Required at start</div>
+              <div className="mt-2 text-[11px] text-slate-400">New trades require current authorization</div>
             </div>
           </div>
 
@@ -630,7 +613,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-white">1. Download & Extract Windows Backend</h4>
                     <p className="text-[11px] text-slate-400">
-                      Get the standalone ZIP from the Downloads tab and launch <code>qbot2_engine.exe</code>.
+                      Get the standalone ZIP from the Downloads tab and launch <code>QBotBackend.exe</code>.
                     </p>
                   </div>
                 </div>
@@ -657,13 +640,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white">2. Pair Windows PC Hardware</h4>
+                    <h4 className="text-xs font-bold text-white">2. Activate your Windows PC</h4>
                     <p className="text-[11px] text-slate-400">
-                      Generate a 6-digit activation code and authorize your PC installation.
+                      Enter the license key sent by the seller after your payment is approved.
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-cyan-400">Pair Now &rarr;</span>
+                <span className="text-xs font-bold text-cyan-400">How to activate &rarr;</span>
               </div>
 
               {/* Item 3 */}
@@ -743,7 +726,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/20"
             >
               <Plus className="w-4 h-4" />
-              <span>Pair Another Device</span>
+              <span>Activation / replacement help</span>
             </button>
           </div>
 
@@ -752,13 +735,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <Smartphone className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="text-base font-bold text-white">No Devices Paired Yet</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-5">
-                Generate an activation code to connect your Windows PC backend or Android companion phone.
+                Activate your Windows PC with the seller-issued key. Your Android app connects to that PC.
               </p>
               <button
                 onClick={() => setPairingModalOpen(true)}
                 className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 cursor-pointer"
               >
-                Generate Pairing Code
+                View activation instructions
               </button>
             </div>
           ) : (
@@ -911,7 +894,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                 <div>
                   <span className="text-[10px] text-slate-500 block uppercase">Plan Entitlement</span>
                   <span className="text-cyan-400 text-[11px] block font-bold uppercase">
-                    {subscription?.planId || 'Standard'} ({subscription?.maxDevices || 2} Devices)
+                    {subscription?.planId || 'No plan'} (1 Windows PC + Android companion)
                   </span>
                 </div>
               </div>
@@ -1043,7 +1026,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       )}
 
       {/* Pairing Modal */}
-      <PairingModal
+      <ActivationHelp
         isOpen={pairingModalOpen}
         onClose={() => setPairingModalOpen(false)}
         onDevicePaired={refreshUserData}
@@ -1052,6 +1035,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       {/* Payment QR Modal */}
       <PaymentQRModal
         isOpen={qrModalOpen}
+        initialPlan={subscription?.planId === 'annual' ? 'annual' : 'monthly'}
         onClose={() => {
           setQrModalOpen(false);
           refreshUserData();

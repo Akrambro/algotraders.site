@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { AdminLoginGate } from './AdminLoginGate.tsx';
+import { AdminLicenses } from './AdminLicenses.tsx';
+import {getSubscriptionStatus, hasActiveSubscription} from '../subscriptions.ts';
 
 interface AdminDashboardProps {
   onExitAdmin?: () => void;
@@ -42,6 +44,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
   const [isTestingDb, setIsTestingDb] = useState<boolean>(false);
   const [pendingPayments, setPendingPayments] = useState<any[]>([]);
   const [verifyingPaymentId, setVerifyingPaymentId] = useState<string | null>(null);
+  const [licenseCustomerId, setLicenseCustomerId] = useState('');
+
+  const openLicenseControls = (customerId: string) => {
+    setLicenseCustomerId(customerId);
+    const section = document.getElementById('admin-license-controls');
+    section?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    section?.focus({preventScroll: true});
+  };
 
   const handleExportSupabaseSQL = async () => {
     try {
@@ -57,35 +67,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setActionMessage('Supabase PostgreSQL schema & seed script downloaded! Paste it into Supabase SQL Editor.');
+        setActionMessage('Licensing migration SQL downloaded. Back up the database before applying it in Supabase SQL Editor.');
       } else {
         setActionMessage('Failed to download Supabase SQL.');
       }
     } catch (err: any) {
       setActionMessage(`Error exporting Supabase SQL: ${err.message}`);
-    }
-  };
-
-  const handleExportMySQLDump = async () => {
-    try {
-      const res = await fetch('/api/admin/database/export-sql', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'algotraders_mysql_dump.sql';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setActionMessage('MySQL .SQL dump downloaded successfully!');
-      } else {
-        setActionMessage('Failed to download MySQL dump.');
-      }
-    } catch (err: any) {
-      setActionMessage(`Error exporting SQL: ${err.message}`);
     }
   };
 
@@ -104,10 +91,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
       const [mRes, uRes, wRes, dbRes, pRes] = await Promise.all([
         fetch('/api/admin/metrics', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/webhooks', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/database/status'),
+        fetch('/api/admin/audit-logs', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/database/status', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/pending-payments', { headers: { Authorization: `Bearer ${token}` } })
       ]);
+
+      for (const response of [mRes, uRes, wRes, dbRes, pRes]) {
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Could not refresh the admin portal.');
+        }
+      }
 
       if (mRes.ok) setMetrics(await mRes.json());
       if (uRes.ok) {
@@ -126,8 +120,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         const pData = await pRes.json();
         setPendingPayments(pData.payments || []);
       }
-    } catch (err) {
-      console.error('Failed to load admin data:', err);
+    } catch (err: any) {
+      setActionMessage(err.message || 'Failed to load admin data.');
     } finally {
       setLoading(false);
     }
@@ -136,7 +130,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
   const handleTestSupabaseLive = async () => {
     setIsTestingDb(true);
     try {
-      const res = await fetch('/api/database/status');
+      const res = await fetch('/api/database/status', { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setDbStatus(data);
@@ -155,7 +149,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
 
   useEffect(() => {
     fetchAdminData();
-  }, [token, user]);
+    if (!token || user?.role !== 'admin') return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchAdminData();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [token, user?.id, user?.role]);
 
   const handleActivateSubscription = async (subIdOrUserId: string) => {
     try {
@@ -164,6 +163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not activate the subscription.');
       setActionMessage(data.message || 'Subscription activated successfully.');
       await fetchAdminData();
       await refreshUserData();
@@ -179,6 +179,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not suspend the subscription.');
       setActionMessage(data.message || 'Subscription suspended.');
       await fetchAdminData();
       await refreshUserData();
@@ -194,6 +195,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not suspend the customer.');
       setActionMessage(data.message || 'Customer suspended.');
       await fetchAdminData();
       await refreshUserData();
@@ -209,6 +211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not reactivate the customer.');
       setActionMessage(data.message || 'Customer reactivated.');
       await fetchAdminData();
       await refreshUserData();
@@ -228,9 +231,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         body: JSON.stringify({ days: 30 })
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not grant promotional time.');
       setActionMessage(data.message || 'Granted 30 days promotional access.');
       await fetchAdminData();
       await refreshUserData();
+      openLicenseControls(userId);
     } catch (err: any) {
       setActionMessage(err.message);
     }
@@ -244,6 +249,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not revoke the device.');
       setActionMessage(data.message || 'Device revoked.');
       await fetchAdminData();
       await refreshUserData();
@@ -264,10 +270,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         },
         body: JSON.stringify({
           userId: selectedUserForNote.id,
-          note: supportNoteText
+          content: supportNoteText
         })
       });
       const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not save the support note.');
       setActionMessage('Support note saved to customer audit log.');
       setSelectedUserForNote(null);
       setSupportNoteText('');
@@ -292,9 +299,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
       });
       const data = await resp.json();
       if (resp.ok) {
-        setActionMessage('Manual payment approved! User subscription activated and software downloads unlocked.');
+        setActionMessage(data.message || 'Payment approved. Generate and copy the customer’s license key above.');
         await fetchAdminData();
         await refreshUserData();
+        if (data.user?.id) openLicenseControls(data.user.id);
       } else {
         setActionMessage(data.error || 'Failed to verify payment.');
       }
@@ -338,18 +346,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
           <button
             onClick={handleExportSupabaseSQL}
             className="px-3 py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-emerald-950/40"
-            title="Download PostgreSQL / Supabase schema & initial data script"
+            title="Download the current Supabase licensing migrations"
           >
             <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Export Supabase SQL (.sql)</span>
-          </button>
-          <button
-            onClick={handleExportMySQLDump}
-            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Download MySQL .sql file"
-          >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Export MySQL (.sql)</span>
+            <span>Download licensing SQL</span>
           </button>
           <button
             onClick={fetchAdminData}
@@ -382,47 +382,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
         </div>
       )}
 
+      {token && user?.role === 'admin' && <AdminLicenses token={token} users={usersList}
+        customerId={licenseCustomerId} onCustomerChange={setLicenseCustomerId} onChanged={fetchAdminData} />}
+
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Total Customers</div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
-            {metrics?.totalUsers ?? '...'}
+            {metrics?.totalCustomers ?? '...'}
           </div>
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Active Subs</div>
           <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
-            {metrics?.activeSubs ?? '...'}
+            {metrics?.activeSubscriptions ?? '...'}
           </div>
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Active Licenses</div>
           <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
-            {metrics?.activeSubs ?? metrics?.totalUsers ?? '8'}
+            {metrics?.activeLicenses ?? '...'}
           </div>
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Expired Subs</div>
           <div className="text-2xl font-bold font-mono text-slate-400 mt-1">
-            {metrics?.expiredSubs ?? '...'}
+            {metrics?.expiredSubscriptions ?? '...'}
           </div>
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
           <div className="text-[11px] text-slate-400">Monthly Run Rate</div>
           <div className="text-2xl font-bold font-mono text-white mt-1">
-            {metrics?.mrr ? `₹${Number(metrics.mrr).toLocaleString('en-IN')}` : '₹49,999'}
+            {metrics?.mrr != null ? `₹${Number(metrics.mrr).toLocaleString('en-IN', {maximumFractionDigits: 2})}` : '...'}
           </div>
         </div>
 
         <div className="glass-card rounded-2xl p-4 border border-slate-800">
-          <div className="text-[11px] text-slate-400">Paired Hardware</div>
+          <div className="text-[11px] text-slate-400">Recently Validated PCs</div>
           <div className="text-2xl font-bold font-mono text-purple-300 mt-1">
-            {metrics?.activeDevices ?? '...'}
+            {metrics?.activeDevicesCount ?? '...'}
           </div>
         </div>
       </div>
@@ -441,7 +444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-white">Database Engine & Supabase Cloud Sync</h4>
+              <h4 className="text-sm font-bold text-white">Licensing database</h4>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                 dbStatus?.supabase?.connected
                   ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/40'
@@ -450,14 +453,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                   : 'bg-slate-900 text-slate-400 border-slate-800'
               }`}>
                 {dbStatus?.supabase?.connected
-                  ? 'SUPABASE SYNC CONNECTED'
+                  ? 'SUPABASE CONNECTED'
                   : dbStatus?.supabase?.configured
                   ? 'KEYS DETECTED (SCHEMA PENDING)'
-                  : 'IN-MEMORY LOCAL STORAGE'}
+                  : 'DATABASE UNAVAILABLE'}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              {dbStatus?.supabase?.message || 'In-memory engine active. Connect Supabase to persist customer records permanently.'}
+              {dbStatus?.supabase?.message || 'Checking the persistent licensing database. Keys cannot be issued while it is unavailable.'}
             </p>
           </div>
         </div>
@@ -541,21 +544,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                     <td className="py-3 px-3">
                       {p.status === 'verified' ? (
                         <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold">
-                          VERIFIED & ACTIVE
+                          PAYMENT VERIFIED
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
-                          PENDING SCREENSHOT
+                          {p.status === 'rejected' ? 'REJECTED' : 'PENDING REVIEW'}
                         </span>
                       )}
                     </td>
                     <td className="py-3 px-3 text-right">
                       {p.status === 'verified' ? (
-                        <span className="text-[11px] text-emerald-400 font-sans">Software Activated</span>
-                      ) : (
+                        <button onClick={() => openLicenseControls(p.userId || usersList.find(c => c.email.toLowerCase() === p.email.toLowerCase())?.id || '')}
+                          className="rounded-lg bg-cyan-950 px-3 py-1.5 text-xs text-cyan-200 font-sans">License keys</button>
+                      ) : p.status === 'pending' ? (
                         <button
                           onClick={() => handleVerifyManualPayment(p.id)}
-                          disabled={verifyingPaymentId === p.id}
+                          disabled={Boolean(verifyingPaymentId)}
                           className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                         >
                           {verifyingPaymentId === p.id ? (
@@ -566,11 +570,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                           ) : (
                             <>
                               <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Approve & Activate Software</span>
+                              <span>Approve payment</span>
                             </>
                           )}
                         </button>
-                      )}
+                      ) : <span className="text-xs text-slate-500">Rejected</span>}
                     </td>
                   </tr>
                 ))
@@ -635,7 +639,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                   <td className="py-3 px-3">
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        cust.subscription?.status === 'active'
+                        hasActiveSubscription(cust.subscription)
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                           : cust.subscription?.status === 'trialing'
                           ? 'bg-cyan-500/20 text-cyan-300'
@@ -650,13 +654,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                           : 'bg-slate-800 text-slate-400'
                       }`}
                     >
-                      {cust.subscription?.status || 'None'} ({cust.subscription?.planId || 'Free'})
+                      {getSubscriptionStatus(cust.subscription)} ({cust.subscription?.planId || 'No plan'})
                     </span>
                     {cust.subscription?.provider && (
                       <span className="ml-1 text-[9px] text-slate-500 font-mono">
                         [{cust.subscription.provider}]
                       </span>
                     )}
+                    {cust.subscription?.currentPeriodEnd && <div className="mt-1 text-[10px] text-slate-400">Paid until {new Date(cust.subscription.currentPeriodEnd).toLocaleString()}</div>}
                   </td>
                   <td className="py-3 px-3 text-slate-300">
                     {cust.devicesCount ?? (cust.devices?.length || 0)} device(s)
@@ -665,6 +670,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
                     {cust.supportNotes ? cust.supportNotes[cust.supportNotes.length - 1] : 'No notes'}
                   </td>
                   <td className="py-3 px-3 text-right space-x-1">
+                    {cust.role === 'customer' && <button onClick={() => openLicenseControls(cust.id)}
+                      className="px-2 py-1 rounded bg-cyan-800 text-white text-[11px] font-sans">License keys</button>}
                     <button
                       onClick={() => handleGrantPromo(cust.id)}
                       className="px-2 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 text-[11px] font-sans"
@@ -707,43 +714,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
       <div className="glass-panel rounded-2xl p-6 border border-slate-700/80 shadow-2xl">
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
           <div>
-            <h3 className="text-lg font-bold text-white">Payment & Subscription Webhook Audit Log</h3>
+            <h3 className="text-lg font-bold text-white">License and payment activity</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Idempotent event processing for subscription and payment events.
+              Recent payment approvals, key generation, PC activations and revocations.
             </p>
           </div>
-          <span className="text-xs font-mono text-emerald-400">Idempotency Guard Active</span>
+          <span className="text-xs font-mono text-emerald-400">Latest 50 events</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-900/80 text-slate-400 uppercase font-mono text-[10px]">
               <tr>
-                <th className="py-2.5 px-3">Event ID</th>
-                <th className="py-2.5 px-3">Event Type</th>
-                <th className="py-2.5 px-3">Processed At</th>
-                <th className="py-2.5 px-3">Delivery Status</th>
+                <th className="py-2.5 px-3">Customer</th>
+                <th className="py-2.5 px-3">Action</th>
+                <th className="py-2.5 px-3">Time</th>
+                <th className="py-2.5 px-3">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
               {webhooks.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-slate-500">
-                    No webhooks processed yet.
+                    No activity recorded yet.
                   </td>
                 </tr>
               ) : (
                 webhooks.map((ev) => (
-                  <tr key={ev.eventId}>
-                    <td className="py-2.5 px-3 text-cyan-400">{ev.eventId}</td>
-                    <td className="py-2.5 px-3 text-white font-bold">{ev.eventType}</td>
+                  <tr key={ev.id}>
+                    <td className="py-2.5 px-3 text-cyan-400">{usersList.find(customer => customer.id === ev.userId)?.email || ev.userId || 'System'}</td>
+                    <td className="py-2.5 px-3 text-white font-bold">{ev.action}</td>
                     <td className="py-2.5 px-3 text-slate-400">
-                      {new Date(ev.receivedAt).toLocaleTimeString()}
+                      {new Date(ev.timestamp).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">
-                        IDEMPOTENT SUCCESS
-                      </span>
+                      {ev.details}
                     </td>
                   </tr>
                 ))
