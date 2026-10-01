@@ -82,6 +82,8 @@ export interface LicenseRecord {
   user_id: string;
   subscription_id: string;
   key_prefix: string;
+  raw_key?: string | null;
+  rawKey?: string | null;
   status: 'issued' | 'active' | 'revoked';
   device_id: string | null;
   expires_at: string;

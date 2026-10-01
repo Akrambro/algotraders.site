@@ -117,72 +117,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <Lock className="w-6 h-6" />
           </div>
           <h3 className="text-2xl font-bold text-white tracking-tight">
-            {mode === 'signin' && 'Sign In to QBot2'}
+            {mode === 'signin' && 'Sign In to Algo Trders'}
             {mode === 'signup' && 'Create Your Account'}
             {mode === 'forgot' && 'Reset Password'}
             {mode === 'reset' && 'Choose New Password'}
             {mode === '2fa' && 'Two-Factor Verification'}
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-            {mode === 'signin' && 'Access your paired devices and subscription entitlements'}
-            {mode === 'signup' && 'Access your personal license dashboard & paired devices'}
+            {mode === 'signin' && 'Access your QBot2 customer dashboard & software downloads'}
+            {mode === 'signup' && 'Register your email & password to access QBot2'}
             {mode === 'forgot' && 'Enter your registered email to receive reset instructions'}
             {mode === 'reset' && 'Must be at least 8 characters long'}
             {mode === '2fa' && 'Enter your authenticator app code'}
           </p>
         </div>
-
-        {/* Presets Bar for Instant Database Testing */}
-        {(mode === 'signin' || mode === '2fa') && (
-          <div className="mb-5 p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-mono">
-              <span className="text-slate-400">Database Test Accounts:</span>
-              <span className="text-cyan-400 font-bold">PW: password123</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => selectTestCustomer('algotraders.site@zohomail.in')}
-                className="px-2 py-1 rounded bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold transition-colors"
-                title="Quotex Trader: Active Plan, Paired Devices"
-              >
-                Quotex Trader
-              </button>
-              <button
-                type="button"
-                onClick={() => selectTestCustomer('david.kim@quantfund.io')}
-                className="px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors"
-                title="David Kim: Pending Verification"
-              >
-                David (Pending QR)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectTestCustomer('priya.patel@mumbaifx.com')}
-                className="px-2 py-1 rounded bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold transition-colors"
-                title="Priya Patel: Active Annual, 3 Max Devices Quota"
-              >
-                Priya (3 Devices)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectTestCustomer('carlos.mendez@forexmadrid.es')}
-                className="px-2 py-1 rounded bg-orange-950/80 hover:bg-orange-900 text-orange-300 border border-orange-500/30 text-[10px] font-semibold transition-colors"
-                title="Carlos Mendez: Past Due Subscription"
-              >
-                Carlos (Past Due)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectTestCustomer('algotraders.site@zohomail.in', '123456')}
-                className="px-2 py-1 rounded bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/30 text-[10px] font-semibold transition-colors"
-                title="Support Admin: System Admin with 2FA"
-              >
-                Admin (2FA)
-              </button>
-            </div>
-          </div>
-        )}
 
         {errorMessage && (
           <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">

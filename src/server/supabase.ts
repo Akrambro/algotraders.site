@@ -17,6 +17,10 @@ export async function testSupabaseConnection() {
   return {connected:!error,message:error ? 'Run migrations/002_device_licensing.sql and verify the service-role credentials.' : 'Persistent licensing database connected.'};
 }
 export async function generateSupabaseSQL(): Promise<string> {
-  const migrations=await Promise.all(['002_device_licensing.sql','003_license_admin_workflow.sql'].map(file=>readFile(path.join(process.cwd(),'migrations',file),'utf8')));
+  const migrations = await Promise.all([
+    '004_license_keys_plain_and_hash.sql',
+    '002_device_licensing.sql',
+    '003_license_admin_workflow.sql'
+  ].map(file => readFile(path.join(process.cwd(), 'migrations', file), 'utf8')));
   return migrations.join('\n\n');
 }

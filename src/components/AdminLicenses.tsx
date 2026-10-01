@@ -148,9 +148,35 @@ export function AdminLicenses({token, users, customerId, onCustomerChange, onCha
         {loading && <tr><td colSpan={5} className="p-3">Loading licenses…</td></tr>}
         {!loading && !licenses.length && <tr><td colSpan={5} className="p-3">No license keys issued{customer ? ' for this customer' : ''}.</td></tr>}
         {!loading && licenses.map(license => <tr key={license.id} className="border-t border-slate-800">
-          <td className="p-2"><div className="font-semibold">{users.find(user => user.id === license.user_id)?.name || 'Customer'}</div><div>{users.find(user => user.id === license.user_id)?.email || license.user_id}</div></td>
-          <td className="p-2">{license.key_prefix}…<br/>{getLicenseStatus(license, users.find(user => user.id === license.user_id)?.subscription)}</td>
-          <td className="p-2">{new Date(license.expires_at).toLocaleString()}</td>
+          <td className="p-2">
+            <div className="font-semibold text-white">{users.find(user => user.id === license.user_id)?.name || 'Customer'}</div>
+            <div className="text-slate-400">{users.find(user => user.id === license.user_id)?.email || license.user_id}</div>
+          </td>
+          <td className="p-2">
+            {license.raw_key ? (
+              <div className="space-y-1">
+                <code className="block text-cyan-300 font-mono text-[11px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 select-all break-all">
+                  {license.raw_key}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(license.raw_key!);
+                    setMessage(`Copied key for ${users.find(u => u.id === license.user_id)?.email || 'customer'}`);
+                  }}
+                  className="text-[10px] text-cyan-400 hover:text-cyan-300 underline font-medium cursor-pointer"
+                >
+                  Copy Plain Key
+                </button>
+              </div>
+            ) : (
+              <span className="font-mono text-cyan-300">{license.key_prefix}…</span>
+            )}
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              Status: <span className="font-semibold text-slate-200">{getLicenseStatus(license, users.find(user => user.id === license.user_id)?.subscription)}</span>
+            </div>
+          </td>
+          <td className="p-2 text-slate-300">{new Date(license.expires_at).toLocaleString()}</td>
           <td className="p-2">{license.device_id ? <>
             <div>{license.device?.device_name || 'Windows PC'}</div>
             <div className="break-all font-mono">Device ID: {license.device_id}</div>

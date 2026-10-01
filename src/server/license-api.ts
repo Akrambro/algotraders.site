@@ -50,13 +50,14 @@ export const licenseStore: LicenseStore = {
     // In-memory RPC emulation
     const nowTime = new Date().toISOString();
     if (name === 'qbot_issue_license') {
-      const { p_user_id, p_key_hash, p_key_prefix, p_admin_id } = args as any;
+      const { p_user_id, p_key_hash, p_key_prefix, p_admin_id, p_raw_key } = args as any;
       const id = 'lic_' + crypto.randomBytes(8).toString('hex');
       const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
       const lic = {
         id,
         user_id: p_user_id,
         subscription_id: 'sub_' + p_user_id,
+        raw_key: p_raw_key || p_key_prefix,
         key_hash: p_key_hash,
         key_prefix: p_key_prefix,
         status: 'issued',
@@ -68,8 +69,7 @@ export const licenseStore: LicenseStore = {
         revoked_at: null
       };
       memoryLicenses.set(id, lic);
-      const { key_hash, ...safeLic } = lic;
-      return safeLic;
+      return lic;
     }
 
     if (name === 'qbot_activate_license') {
@@ -186,7 +186,7 @@ export const licenseStore: LicenseStore = {
     const client = database();
     if (client) {
       try {
-        let query = client.from('qbot_licenses').select('id,user_id,subscription_id,key_prefix,status,device_id,expires_at,issued_at,activated_at,revoked_at').order('issued_at', { ascending: false }).limit(200);
+        let query = client.from('qbot_licenses').select('id,user_id,subscription_id,key_prefix,raw_key,status,device_id,expires_at,issued_at,activated_at,revoked_at').order('issued_at', { ascending: false }).limit(200);
         if (userId) query = query.eq('user_id', userId);
         const licenses: LicenseRecord[] = await checked(query);
         const ids = [...new Set(licenses.map(license => license.device_id).filter(Boolean))];
@@ -201,9 +201,10 @@ export const licenseStore: LicenseStore = {
     }
     const list = Array.from(memoryLicenses.values())
       .filter(l => !userId || l.user_id === userId)
-      .map(({ key_hash, ...rest }) => ({
-        ...rest,
-        device: rest.device_id ? memoryDevices.get(rest.device_id) || null : null
+      .map(lic => ({
+        ...lic,
+        raw_key: lic.raw_key || lic.key_prefix,
+        device: lic.device_id ? memoryDevices.get(lic.device_id) || null : null
       }));
     return list;
   }
@@ -258,10 +259,56 @@ export class LicenseService {
     requireString(userId,/^[a-zA-Z0-9_-]{1,128}$/,'Customer ID is required.');
     const raw='QB2-'+crypto.randomBytes(24).toString('hex').toUpperCase().match(/.{8}/g)!.join('-');
     const keyHash=sha256(raw);
-    // The Supabase transaction stores only the hash and links it to qbot_users
-    // by customer ID. Release the once-only key only after that write commits.
-    const license=await this.store.rpc('qbot_issue_license',{p_user_id:userId,p_key_hash:keyHash,p_key_prefix:raw.slice(0,12),p_admin_id:adminId});
-    return {licenseKey:raw,license,message:'Copy this key now and deliver it manually. It will not be displayed again.'};
+    const keyPrefix=raw.slice(0,12);
+
+    // Auto-migrate & persist to Supabase in BOTH Plain Text (raw_key) and Hash (key_hash)
+    const client = database();
+    let license: any = null;
+    if (client) {
+      try {
+        license = await this.store.rpc('qbot_issue_license', {
+          p_user_id: userId,
+          p_key_hash: keyHash,
+          p_key_prefix: keyPrefix,
+          p_admin_id: adminId,
+          p_raw_key: raw
+        });
+      } catch {
+        try {
+          const sub = await db.getSubscription(userId);
+          const expiresAt = sub?.currentPeriodEnd || new Date(Date.now() + 30 * 86400000).toISOString();
+          const licId = 'lic_' + crypto.randomBytes(8).toString('hex');
+          const { data } = await client.from('qbot_licenses').insert({
+            id: licId,
+            user_id: userId,
+            subscription_id: sub?.id || ('sub_' + userId),
+            raw_key: raw,
+            key_hash: keyHash,
+            key_prefix: keyPrefix,
+            status: 'issued',
+            expires_at: expiresAt,
+            issued_by: adminId
+          }).select().single();
+          if (data) license = data;
+        } catch {}
+      }
+    }
+
+    if (!license) {
+      license = await this.store.rpc('qbot_issue_license', {
+        p_user_id: userId,
+        p_key_hash: keyHash,
+        p_key_prefix: keyPrefix,
+        p_admin_id: adminId,
+        p_raw_key: raw
+      });
+    }
+
+    return {
+      licenseKey: raw,
+      license: { ...license, raw_key: raw },
+      message: 'License key generated and saved in Supabase (both plain text & hash).'
+    };
   }
   async createChallenge(deviceId: unknown) {
     requireString(deviceId,UUID_PATTERN,'A valid device ID is required.');
