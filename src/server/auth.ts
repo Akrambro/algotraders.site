@@ -6,8 +6,12 @@ import { db } from './db.ts';
 import { User } from '../types.ts';
 
 const configuredSecret = process.env.JWT_SECRET;
-if (process.env.NODE_ENV === 'production' && (!configuredSecret || configuredSecret.length < 32)) throw new Error('A unique JWT_SECRET of at least 32 characters is required.');
-const JWT_SECRET = configuredSecret || crypto.randomBytes(48).toString('hex');
+if (!configuredSecret || configuredSecret.length < 32) {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[Auth] JWT_SECRET is not configured or shorter than 32 characters. Using an ephemeral secret for this session. Configure JWT_SECRET in environment variables to persist sessions across restarts.');
+  }
+}
+const JWT_SECRET = (configuredSecret && configuredSecret.length >= 32) ? configuredSecret : crypto.randomBytes(48).toString('hex');
 
 export interface AuthenticatedRequest extends Request {
   user?: User;

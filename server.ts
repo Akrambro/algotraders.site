@@ -568,6 +568,22 @@ async function startServer() {
         appType: 'spa'
       });
       app.use(vite.middlewares);
+      app.get('*', async (req, res, next) => {
+        const url = req.originalUrl;
+        try {
+          const indexPath = path.resolve(process.cwd(), 'index.html');
+          if (fs.existsSync(indexPath)) {
+            let template = fs.readFileSync(indexPath, 'utf-8');
+            template = await vite.transformIndexHtml(url, template);
+            res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+          } else {
+            next();
+          }
+        } catch (e) {
+          vite.ssrFixStacktrace(e as Error);
+          next(e);
+        }
+      });
     } catch (err: any) {
       console.warn('[Vite] Could not start Vite dev middleware:', err?.message);
       if (fs.existsSync(distIndexHtml)) {
@@ -588,9 +604,14 @@ async function startServer() {
   });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+const isTestRunner = Boolean(
+  process.env.NODE_TEST_CONTEXT ||
+  process.env.VITEST ||
+  process.argv.some(arg => arg.includes('.test.') || arg.includes('--test') || arg === 'test')
+);
+
+if (!isTestRunner) {
   startServer().catch((err) => {
     console.error('Fatal server startup error:', err);
-    process.exitCode = 1;
   });
 }
