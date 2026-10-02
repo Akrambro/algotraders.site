@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Navbar } from './components/Navbar.tsx';
 import { HeroSection } from './components/HeroSection.tsx';
@@ -17,33 +17,63 @@ import { DocsView } from './components/DocsView.tsx';
 import { CustomerFeedbackTicker } from './components/CustomerFeedbackTicker.tsx';
 import { SEOKeywordsGuide } from './components/SEOKeywordsGuide.tsx';
 import { SEOHead } from './components/SEOHead.tsx';
+import { SEOPage } from './components/SEOPage.tsx';
+import { SEO_PAGES, SITE_BRAND, SITE_URL } from './seo/seo-data.ts';
 
 function MainApp() {
   const { user } = useAuth();
-  const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'admin' | 'docs'>('landing');
+  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname);
+  const [currentView, setCurrentView] = useState<'landing' | 'seo-page' | 'dashboard' | 'admin' | 'docs'>('landing');
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | 'refund' | 'risk' | null>(null);
 
-  // Scroll to top immediately whenever page/view changes
+  // Sync view based on path and hash
+  const syncRoute = useCallback(() => {
+    const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+    const hash = window.location.hash.replace('#', '');
+
+    setCurrentPath(pathname);
+
+    if (hash === 'admin' || pathname === '/admin') {
+      setCurrentView('admin');
+    } else if (hash === 'dashboard' || pathname === '/dashboard') {
+      setCurrentView('dashboard');
+    } else if (hash === 'docs' || pathname === '/docs') {
+      setCurrentView('docs');
+    } else if (SEO_PAGES[pathname]) {
+      setCurrentView('seo-page');
+    } else {
+      setCurrentView('landing');
+    }
+  }, []);
+
+  useEffect(() => {
+    syncRoute();
+    window.addEventListener('popstate', syncRoute);
+    window.addEventListener('hashchange', syncRoute);
+    return () => {
+      window.removeEventListener('popstate', syncRoute);
+      window.removeEventListener('hashchange', syncRoute);
+    };
+  }, [syncRoute]);
+
+  // Scroll to top on view or path change
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-  }, [currentView]);
+  }, [currentView, currentPath]);
 
-  // Sync hash routing if present (e.g. #dashboard, #admin)
-  useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash === 'dashboard') setCurrentView('dashboard');
-      else if (hash === 'admin') setCurrentView('admin');
-      else if (hash === 'docs') setCurrentView('docs');
-    };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  const navigateTo = (path: string) => {
+    if (path.startsWith('#')) {
+      window.location.hash = path;
+      return;
+    }
+    window.history.pushState({}, '', path);
+    syncRoute();
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  };
 
   const openAuth = (mode: 'signin' | 'signup') => {
     setAuthModalMode(mode);
@@ -51,39 +81,26 @@ function MainApp() {
   };
 
   const handlePlanSelected = (planId: string) => {
-    setCurrentView('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateTo('/dashboard');
   };
+
+  const activeSeoPage = SEO_PAGES[currentPath];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#060913] text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-950">
-      {/* Dynamic SEO Tags per active View */}
+      {/* Landing Page SEO */}
       {currentView === 'landing' && (
         <SEOHead
-          title="Algo Trders.site – Quotex Trading Bot & Binary Options Algorithms"
+          title={`${SITE_BRAND} – Quotex Trading Bot & Binary Options Algorithms`}
           description="Institutional-grade Quotex trading bot and binary options algorithmic execution software for Windows PC with real-time Android mobile companion app."
-          keywords={[
-            'quotex trading bot',
-            'quotex algo bot',
-            'binary options bot',
-            'automated quotex trading',
-            'quotex auto trade bot',
-            'quotex trading bot download apk',
-            'quotex bot for windows 11',
-            'binary options automated trading software',
-            'quotex 1 minute candlestick strategy bot',
-            'quotex otc algorithm robot',
-            'low latency quotex websocket bot',
-            'quotex trading bot india'
-          ]}
           canonicalPath="/"
           jsonLd={[
             {
               '@type': 'SoftwareApplication',
-              'name': 'Algo Trders QBot2 Quotex Trading Bot',
+              'name': `${SITE_BRAND} QBot2 Quotex Trading Bot`,
               'operatingSystem': 'Windows 10, Windows 11, Android 8.0+',
               'applicationCategory': 'FinanceApplication',
-              'softwareVersion': '2.4.1',
+              'softwareVersion': '2.5.0',
               'description':
                 'Automated Quotex trading bot and algorithmic execution software for binary options trading with local Windows daemon, real-time OTC signal calculation, and Android mobile companion.',
               'offers': [
@@ -93,7 +110,7 @@ function MainApp() {
                   'price': '4999',
                   'priceCurrency': 'INR',
                   'availability': 'https://schema.org/InStock',
-                  'url': 'https://algotraders.site/#pricing'
+                  'url': `${SITE_URL}/quotex-bot-pricing`
                 },
                 {
                   '@type': 'Offer',
@@ -101,44 +118,7 @@ function MainApp() {
                   'price': '49999',
                   'priceCurrency': 'INR',
                   'availability': 'https://schema.org/InStock',
-                  'url': 'https://algotraders.site/#pricing'
-                }
-              ],
-              'aggregateRating': {
-                '@type': 'AggregateRating',
-                'ratingValue': '4.9',
-                'reviewCount': '148',
-                'bestRating': '5',
-                'worstRating': '1'
-              }
-            },
-            {
-              '@type': 'Organization',
-              'name': 'Algo Trders.site',
-              'url': 'https://algotraders.site',
-              'logo': 'https://algotraders.site/favicon.svg',
-              'email': 'algotraders.site@zohomail.in'
-            },
-            {
-              '@type': 'BreadcrumbList',
-              'itemListElement': [
-                {
-                  '@type': 'ListItem',
-                  'position': 1,
-                  'name': 'Home',
-                  'item': 'https://algotraders.site'
-                },
-                {
-                  '@type': 'ListItem',
-                  'position': 2,
-                  'name': 'Features',
-                  'item': 'https://algotraders.site/#features'
-                },
-                {
-                  '@type': 'ListItem',
-                  'position': 3,
-                  'name': 'Pricing',
-                  'item': 'https://algotraders.site/#pricing'
+                  'url': `${SITE_URL}/quotex-bot-pricing`
                 }
               ]
             }
@@ -146,33 +126,22 @@ function MainApp() {
         />
       )}
 
+      {/* Customer Dashboard SEO (Noindex) */}
       {currentView === 'dashboard' && (
         <SEOHead
-          title="Customer Dashboard – License & Device Pairing Hub | Algo Trders.site"
-          description="Manage your QBot2 Quotex bot subscription, view real-time binary options telemetry, pair hardware devices, and download the latest Windows & Android releases."
-          keywords={[
-            'quotex customer dashboard',
-            'qbot2 device pairing',
-            'quotex bot license status',
-            'windows pc algo daemon',
-            'android companion pairing'
-          ]}
-          canonicalPath="/#dashboard"
+          title={`Customer Dashboard | ${SITE_BRAND}`}
+          description="Manage your QBot2 Quotex bot subscription, view real-time binary options telemetry, pair hardware devices, and download software releases."
+          canonicalPath="/dashboard"
+          noindex={true}
         />
       )}
 
+      {/* Documentation SEO */}
       {currentView === 'docs' && (
         <SEOHead
-          title="Technical Documentation & API Integration | Algo Trders.site"
-          description="Complete technical specifications, local FastAPI port 8000 daemon setup, hardware fingerprint licensing, and WebSocket integration guide for QBot2 Quotex Bot."
-          keywords={[
-            'quotex trading bot documentation',
-            'fastapi trading bot port 8000',
-            'quotex websocket api',
-            'hardware fingerprint license validation',
-            'binary options algo documentation'
-          ]}
-          canonicalPath="/#docs"
+          title={`Technical Documentation & API Setup | ${SITE_BRAND}`}
+          description="Complete technical specifications, local daemon setup, hardware fingerprint licensing, and binary options execution guide for QBot2."
+          canonicalPath="/docs"
           jsonLd={{
             '@type': 'TechArticle',
             'headline': 'QBot2 Quotex Trading Bot Architecture & Integration Guide',
@@ -180,37 +149,44 @@ function MainApp() {
               'Technical blueprints and local daemon specifications for running QBot2 Quotex algorithmic bot on Windows with Android companion pairing.',
             'author': {
               '@type': 'Organization',
-              'name': 'Algo Trders.site'
+              'name': SITE_BRAND
             }
           }}
         />
       )}
 
+      {/* Admin Portal SEO (Noindex) */}
       {currentView === 'admin' && (
         <SEOHead
-          title="Admin Control Portal | Algo Trders.site"
-          description="Administrative portal for Algo Trders Quotex trading bots, user licensing management, manual payment verification, and server telemetry."
-          keywords={['algo traders admin', 'quotex bot licensing management']}
-          canonicalPath="/#admin"
+          title={`Admin Control Portal | ${SITE_BRAND}`}
+          description="Administrative portal for AlgoTraders software licensing, user account management, and system telemetry."
+          canonicalPath="/admin"
+          noindex={true}
         />
       )}
 
       {/* Navigation Header */}
       <Navbar
-        currentView={currentView}
-        setCurrentView={setCurrentView}
+        currentView={currentView === 'seo-page' ? 'landing' : currentView}
+        setCurrentView={(view) => {
+          if (view === 'landing') navigateTo('/');
+          else if (view === 'dashboard') navigateTo('/dashboard');
+          else if (view === 'admin') navigateTo('/admin');
+          else if (view === 'docs') navigateTo('/docs');
+        }}
         openAuthModal={openAuth}
         openLegalModal={(t) => setLegalModalType(t)}
+        onNavigate={navigateTo}
       />
 
-      {/* Main Content Areas */}
+      {/* Main Content Area */}
       <main className="flex-grow">
         {currentView === 'landing' && (
           <>
             <HeroSection
               onStartTrial={() => {
                 if (user) {
-                  setCurrentView('dashboard');
+                  navigateTo('/dashboard');
                 } else {
                   openAuth('signup');
                 }
@@ -219,10 +195,9 @@ function MainApp() {
                 const el = document.getElementById('how-it-works');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              onOpenDashboard={() => setCurrentView('dashboard')}
+              onOpenDashboard={() => navigateTo('/dashboard')}
             />
 
-            {/* Live Customer Feedback Marquee Strip */}
             <CustomerFeedbackTicker />
 
             <FeaturesSection />
@@ -230,7 +205,7 @@ function MainApp() {
             <HowItWorksSection
               onGetStarted={() => {
                 if (user) {
-                  setCurrentView('dashboard');
+                  navigateTo('/dashboard');
                 } else {
                   openAuth('signup');
                 }
@@ -239,7 +214,8 @@ function MainApp() {
 
             <ScreenshotsSection />
 
-            <SEOKeywordsGuide />
+            {/* Interactive Knowledge Base with real crawlable SEO links */}
+            <SEOKeywordsGuide onNavigate={navigateTo} />
 
             <PricingSection
               onSelectPlan={handlePlanSelected}
@@ -254,24 +230,27 @@ function MainApp() {
           </>
         )}
 
+        {currentView === 'seo-page' && activeSeoPage && (
+          <SEOPage
+            pageData={activeSeoPage}
+            onOpenAuth={openAuth}
+            onNavigate={navigateTo}
+          />
+        )}
+
         {currentView === 'dashboard' && (
           <CustomerDashboard
             onGoToPricing={() => {
-              setCurrentView('landing');
-              setTimeout(() => {
-                const el = document.getElementById('pricing');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
+              navigateTo('/quotex-bot-pricing');
             }}
-            onOpenDocs={() => setCurrentView('docs')}
+            onOpenDocs={() => navigateTo('/docs')}
           />
         )}
 
         {currentView === 'admin' && (
           <AdminDashboard
             onExitAdmin={() => {
-              setCurrentView('landing');
-              window.location.hash = '';
+              navigateTo('/');
             }}
           />
         )}
@@ -279,11 +258,17 @@ function MainApp() {
         {currentView === 'docs' && <DocsView />}
       </main>
 
-      {/* Footer */}
+      {/* Footer with Crawlable Links */}
       <Footer
         openLegalModal={(t) => setLegalModalType(t)}
         openAuthModal={openAuth}
-        setCurrentView={setCurrentView}
+        setCurrentView={(view) => {
+          if (view === 'landing') navigateTo('/');
+          else if (view === 'dashboard') navigateTo('/dashboard');
+          else if (view === 'admin') navigateTo('/admin');
+          else if (view === 'docs') navigateTo('/docs');
+        }}
+        onNavigate={navigateTo}
       />
 
       {/* Modals */}
@@ -293,7 +278,7 @@ function MainApp() {
         onClose={() => setAuthModalOpen(false)}
         onSuccess={() => {
           setAuthModalOpen(false);
-          setCurrentView('dashboard');
+          navigateTo('/dashboard');
         }}
       />
 

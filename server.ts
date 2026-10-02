@@ -15,6 +15,7 @@ import {
 import { createLicenseRouter, getLicenseSigningKey, LicenseService, licenseStore } from './src/server/license-api.ts';
 import { createDownloadRouter } from './src/server/downloads.ts';
 import { testSupabaseConnection, generateSupabaseSQL, getSupabaseConfig } from './src/server/supabase.ts';
+import { injectRouteMetadata } from './src/server/seo-injector.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -586,13 +587,19 @@ async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction && fs.existsSync(distIndexHtml)) {
-    // Serve pre-built static bundle in production
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(distIndexHtml);
+    // Serve pre-built static bundle in production with SSR route metadata injection
+    app.use(express.static(distPath, { index: false }));
+    app.get('*', (req, res) => {
+      try {
+        const rawTemplate = fs.readFileSync(distIndexHtml, 'utf-8');
+        const rendered = injectRouteMetadata(rawTemplate, req.originalUrl);
+        res.status(200).set({ 'Content-Type': 'text/html' }).send(rendered);
+      } catch {
+        res.sendFile(distIndexHtml);
+      }
     });
   } else {
-    // Fallback to dynamic Vite middleware if running in dev or if dist has not been compiled
+    // Fallback to dynamic Vite middleware in development
     try {
       const vite = await createViteServer({
         server: { middlewareMode: true },
@@ -606,6 +613,7 @@ async function startServer() {
           if (fs.existsSync(indexPath)) {
             let template = fs.readFileSync(indexPath, 'utf-8');
             template = await vite.transformIndexHtml(url, template);
+            template = injectRouteMetadata(template, url);
             res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
           } else {
             next();
@@ -618,9 +626,15 @@ async function startServer() {
     } catch (err: any) {
       console.warn('[Vite] Could not start Vite dev middleware:', err?.message);
       if (fs.existsSync(distIndexHtml)) {
-        app.use(express.static(distPath));
-        app.get('*', (_req, res) => {
-          res.sendFile(distIndexHtml);
+        app.use(express.static(distPath, { index: false }));
+        app.get('*', (req, res) => {
+          try {
+            const rawTemplate = fs.readFileSync(distIndexHtml, 'utf-8');
+            const rendered = injectRouteMetadata(rawTemplate, req.originalUrl);
+            res.status(200).set({ 'Content-Type': 'text/html' }).send(rendered);
+          } catch {
+            res.sendFile(distIndexHtml);
+          }
         });
       } else {
         app.get('*', (_req, res) => {
