@@ -1,0 +1,16 @@
+{
+  "windows": {
+    "url": "https://drive.google.com/uc?export=download&id=19Gxf6W3DMx5YqNmGVa9Lr-5v5OwxdOzq",
+    "sha256": "",
+    "size": "58 MB",
+    "fileId": "19Gxf6W3DMx5YqNmGVa9Lr-5v5OwxdOzq",
+    "isGoogleDrive": true
+  },
+  "android": {
+    "url": "https://drive.google.com/uc?export=download&id=1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o",
+    "sha256": "",
+    "size": "65 MB",
+    "fileId": "1Qjf-ICUswsxKkr2voaElHQ0RdsWRre0o",
+    "isGoogleDrive": true
+  }
+}

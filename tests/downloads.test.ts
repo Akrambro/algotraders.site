@@ -190,3 +190,25 @@ test('unknown platforms and database outages cannot fall through to a download',
   });
   assert.deepEqual(calls, []);
 });
+
+test('Google Drive releases are supported via URL or raw File ID without redirects', async () => {
+  const gdriveId = '1a2B3c4D5e6F7g8H9i0JklmnOPQRstuvw';
+  process.env.LICENSED_WINDOWS_DOWNLOAD_URL = `https://drive.google.com/file/d/${gdriveId}/view?usp=sharing`;
+  process.env.LICENSED_WINDOWS_DOWNLOAD_SIZE = '58 MB';
+  await withHttp(async get => {
+    const data = await (await get('')).json();
+    assert.equal(data.isEntitled, true);
+    const winItem = data.downloads.find((d: any) => d.platform === 'windows');
+    assert.ok(winItem);
+    assert.equal(winItem.downloadUrl, '/api/downloads/file/windows');
+    assert.equal(winItem.size, '58 MB');
+
+    const fileResp = await get('/file/windows');
+    assert.equal(fileResp.status, 200);
+    assert.equal(fileResp.headers.get('location'), null);
+    assert.match(fileResp.headers.get('content-disposition')!, /QBot2-Licensed-Windows-2\.5\.0\.zip/);
+    assert.deepEqual(Buffer.from(await fileResp.arrayBuffer()), artifact);
+  });
+  assert.equal(calls.length, 1);
+});
+

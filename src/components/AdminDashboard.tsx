@@ -17,11 +17,17 @@ import {
   TrendingUp,
   Cpu,
   Monitor,
+  Smartphone,
   ShieldCheck,
   Loader2,
   Download,
   Database,
-  LogOut
+  LogOut,
+  CloudDownload,
+  HardDrive,
+  ExternalLink,
+  HelpCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { AdminLoginGate } from './AdminLoginGate.tsx';
@@ -45,6 +51,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
   const [pendingPayments, setPendingPayments] = useState<any[]>([]);
   const [verifyingPaymentId, setVerifyingPaymentId] = useState<string | null>(null);
   const [licenseCustomerId, setLicenseCustomerId] = useState('');
+
+  // Google Drive Releases state
+  const [releases, setReleases] = useState<any>(null);
+  const [winReleaseInput, setWinReleaseInput] = useState<string>('');
+  const [androidReleaseInput, setAndroidReleaseInput] = useState<string>('');
+  const [winReleaseSize, setWinReleaseSize] = useState<string>('58 MB');
+  const [androidReleaseSize, setAndroidReleaseSize] = useState<string>('52 MB');
+  const [savingReleasePlatform, setSavingReleasePlatform] = useState<string | null>(null);
+
+  const fetchReleases = async () => {
+    try {
+      const res = await fetch('/api/downloads/admin/config', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReleases(data);
+        if (data.windows?.fileId || data.windows?.url) {
+          setWinReleaseInput(data.windows.fileId || data.windows.url);
+        }
+        if (data.windows?.size) setWinReleaseSize(data.windows.size);
+        if (data.android?.fileId || data.android?.url) {
+          setAndroidReleaseInput(data.android.fileId || data.android.url);
+        }
+        if (data.android?.size) setAndroidReleaseSize(data.android.size);
+      }
+    } catch {}
+  };
+
+  const handleSaveRelease = async (platform: 'windows' | 'android') => {
+    const inputVal = platform === 'windows' ? winReleaseInput : androidReleaseInput;
+    const sizeVal = platform === 'windows' ? winReleaseSize : androidReleaseSize;
+    if (!inputVal.trim()) {
+      setActionMessage(`Please enter a Google Drive link or File ID for ${platform}.`);
+      return;
+    }
+    setSavingReleasePlatform(platform);
+    try {
+      const res = await fetch('/api/downloads/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ platform, url: inputVal.trim(), size: sizeVal.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save release.');
+      setActionMessage(`✓ ${platform === 'windows' ? 'Windows Backend' : 'Android Companion'} release updated successfully! Customer downloads are now active.`);
+      fetchReleases();
+    } catch (err: any) {
+      setActionMessage(`Error updating release: ${err.message}`);
+    } finally {
+      setSavingReleasePlatform(null);
+    }
+  };
 
   const openLicenseControls = (customerId: string) => {
     setLicenseCustomerId(customerId);
@@ -149,9 +208,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
 
   useEffect(() => {
     fetchAdminData();
+    fetchReleases();
     if (!token || user?.role !== 'admin') return;
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') fetchAdminData();
+      if (document.visibilityState === 'visible') {
+        fetchAdminData();
+        fetchReleases();
+      }
     }, 15000);
     return () => clearInterval(interval);
   }, [token, user?.id, user?.role]);
@@ -474,6 +537,216 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onExitAdmin }) =
             {isTestingDb ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />}
             <span>Test Live Connection</span>
           </button>
+        </div>
+      </div>
+
+      {/* Software Releases & Google Drive Cloud Storage (>50MB Files) */}
+      <div className="rounded-2xl p-6 border border-cyan-500/40 bg-[#091124] shadow-2xl mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-5 border-b border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <CloudDownload className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-lg font-bold text-white">Software Releases & Google Drive Storage</h3>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40">
+                50+ MB SUPABASE BYPASS
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              Host bundled binaries on Google Drive (exceeding Supabase 50MB free-tier limits). Files stream directly to customers on the same page with zero redirects.
+            </p>
+          </div>
+
+          <button
+            onClick={fetchReleases}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Refresh Links</span>
+          </button>
+        </div>
+
+        {/* Informational Guide on Google Drive Link Part & Setup */}
+        <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-6 text-xs text-slate-300 space-y-2">
+          <div className="flex items-center gap-2 text-cyan-400 font-semibold">
+            <HelpCircle className="w-4 h-4" />
+            <span>Which part of the Google Drive link should you provide?</span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            You can provide <strong className="text-white">EITHER</strong> the full Google Drive share link (e.g. <code className="text-cyan-300 select-all font-mono">https://drive.google.com/file/d/1A2b3c4D5e.../view?usp=sharing</code>) <strong className="text-white">OR</strong> just the raw File ID between <code className="text-cyan-300 font-mono">/file/d/</code> and <code className="text-cyan-300 font-mono">/view</code> (<code className="text-cyan-300 font-mono select-all">1A2b3c4D5e...</code>). Our system automatically detects and extracts the file ID.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 text-[11px] border-t border-slate-800/80">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+              <span><strong className="text-slate-200">Required Google Drive Setting:</strong> Right-click file in Google Drive &rarr; Share &rarr; set General access to <strong className="text-emerald-400">"Anyone with the link can view"</strong>.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+              <span><strong className="text-slate-200">Same-Page In-Place Downloads:</strong> Our backend streams the binary bytes directly, resolving Google's virus-scan warning page in the background with zero external redirects.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Release Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Windows Release Card */}
+          <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                    <Monitor className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Windows Backend Release</h4>
+                    <p className="text-[10px] font-mono text-slate-400">QBot2-Licensed-Windows-2.5.0.zip</p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  releases?.windows?.configured
+                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/40'
+                    : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                }`}>
+                  {releases?.windows?.configured ? 'DOWNLOADS ACTIVE' : 'PENDING LINK'}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Google Drive Link or File ID
+                  </label>
+                  <input
+                    type="text"
+                    value={winReleaseInput}
+                    onChange={(e) => setWinReleaseInput(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/1abc.../view or 1abc..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-500 text-xs text-white outline-none font-mono"
+                  />
+                  {releases?.windows?.fileId && (
+                    <p className="text-[10px] font-mono text-cyan-400 mt-1">
+                      Active File ID: <span className="text-white select-all">{releases.windows.fileId}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Display File Size
+                  </label>
+                  <input
+                    type="text"
+                    value={winReleaseSize}
+                    onChange={(e) => setWinReleaseSize(e.target.value)}
+                    placeholder="e.g. 58 MB or 50+ MB (Google Drive)"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-500 text-xs text-white outline-none font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">
+                {releases?.windows?.configured ? 'Customers can download from Dashboard' : 'Paste Google Drive link to activate'}
+              </span>
+              <button
+                onClick={() => handleSaveRelease('windows')}
+                disabled={savingReleasePlatform === 'windows'}
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {savingReleasePlatform === 'windows' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Save Windows Link</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Android Release Card */}
+          <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Android Companion Release</h4>
+                    <p className="text-[10px] font-mono text-slate-400">QBot2-Licensed-Android-2.5.0.apk</p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  releases?.android?.configured
+                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/40'
+                    : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                }`}>
+                  {releases?.android?.configured ? 'DOWNLOADS ACTIVE' : 'PENDING LINK'}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Google Drive Link or File ID
+                  </label>
+                  <input
+                    type="text"
+                    value={androidReleaseInput}
+                    onChange={(e) => setAndroidReleaseInput(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/1abc.../view or 1abc..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-500 text-xs text-white outline-none font-mono"
+                  />
+                  {releases?.android?.fileId && (
+                    <p className="text-[10px] font-mono text-purple-400 mt-1">
+                      Active File ID: <span className="text-white select-all">{releases.android.fileId}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Display File Size
+                  </label>
+                  <input
+                    type="text"
+                    value={androidReleaseSize}
+                    onChange={(e) => setAndroidReleaseSize(e.target.value)}
+                    placeholder="e.g. 52 MB or 50+ MB (Google Drive)"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-500 text-xs text-white outline-none font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">
+                {releases?.android?.configured ? 'Customers can download from Dashboard' : 'Paste Google Drive link to activate'}
+              </span>
+              <button
+                onClick={() => handleSaveRelease('android')}
+                disabled={savingReleasePlatform === 'android'}
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {savingReleasePlatform === 'android' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Save Android Link</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
