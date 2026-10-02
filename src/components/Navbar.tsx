@@ -118,57 +118,173 @@ export const Navbar: React.FC<NavbarProps> = ({
               onMouseEnter={() => setGuidesDropdownOpen(true)}
               className="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              <span>Bot Guides</span>
+              <span>Bot Guides & Research</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
             {guidesDropdownOpen && (
               <div
                 onMouseLeave={() => setGuidesDropdownOpen(false)}
-                className="absolute left-0 top-full mt-2 w-64 rounded-2xl bg-[#090f20] border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[720px] rounded-2xl bg-[#090f20] border border-slate-800 shadow-2xl p-5 z-50 animate-in fade-in slide-in-from-top-2"
               >
-                <a
-                  href="/quotex-trading-bot"
-                  onClick={(e) => handleNavClick(e, '/quotex-trading-bot')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  Quotex Trading Bot
-                </a>
-                <a
-                  href="/quotex-auto-trading-bot"
-                  onClick={(e) => handleNavClick(e, '/quotex-auto-trading-bot')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  Auto Trading Bot
-                </a>
-                <a
-                  href="/quotex-trade-analysis"
-                  onClick={(e) => handleNavClick(e, '/quotex-trade-analysis')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  Trade Analysis Logic
-                </a>
-                <a
-                  href="/quotex-otc-trading-bot"
-                  onClick={(e) => handleNavClick(e, '/quotex-otc-trading-bot')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  OTC Weekend Algorithm
-                </a>
-                <a
-                  href="/quotex-bot-features"
-                  onClick={(e) => handleNavClick(e, '/quotex-bot-features')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  Features & Specs
-                </a>
-                <a
-                  href="/quotex-bot-guide"
-                  onClick={(e) => handleNavClick(e, '/quotex-bot-guide')}
-                  className="block p-2.5 rounded-xl hover:bg-slate-800/80 text-xs font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
-                >
-                  Setup Guide & Docs
-                </a>
+                <div className="grid grid-cols-3 gap-6 text-xs">
+                  {/* Col 1: Software & Platform */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 tracking-wider block border-b border-slate-800 pb-1.5 mb-2">
+                      Software & Setup
+                    </span>
+                    <a
+                      href="/quotex-trading-bot"
+                      onClick={(e) => handleNavClick(e, '/quotex-trading-bot')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Quotex Trading Bot
+                    </a>
+                    <a
+                      href="/quotex-auto-trading-bot"
+                      onClick={(e) => handleNavClick(e, '/quotex-auto-trading-bot')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Auto Trading Rules
+                    </a>
+                    <a
+                      href="/quotex-bot-windows"
+                      onClick={(e) => handleNavClick(e, '/quotex-bot-windows')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Windows 10/11 Daemon
+                    </a>
+                    <a
+                      href="/quotex-bot-android"
+                      onClick={(e) => handleNavClick(e, '/quotex-bot-android')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Android Companion App
+                    </a>
+                    <a
+                      href="/quotex-bot-demo"
+                      onClick={(e) => handleNavClick(e, '/quotex-bot-demo')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Practice Account Testing
+                    </a>
+                    <a
+                      href="/quotex-bot-risk-controls"
+                      onClick={(e) => handleNavClick(e, '/quotex-bot-risk-controls')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Risk Controls & Stops
+                    </a>
+                  </div>
+
+                  {/* Col 2: Strategies & Analysis */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 tracking-wider block border-b border-slate-800 pb-1.5 mb-2">
+                      Strategies & Math
+                    </span>
+                    <a
+                      href="/quotex-trade-analysis"
+                      onClick={(e) => handleNavClick(e, '/quotex-trade-analysis')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Trade Analysis Confluence
+                    </a>
+                    <a
+                      href="/quotex-otc-trading-bot"
+                      onClick={(e) => handleNavClick(e, '/quotex-otc-trading-bot')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      OTC Weekend Algorithm
+                    </a>
+                    <a
+                      href="/guides/quotex-1-minute-strategy"
+                      onClick={(e) => handleNavClick(e, '/guides/quotex-1-minute-strategy')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      1-Minute Strategy Guide
+                    </a>
+                    <a
+                      href="/guides/quotex-5-minute-strategy"
+                      onClick={(e) => handleNavClick(e, '/guides/quotex-5-minute-strategy')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      5-Minute Strategy Guide
+                    </a>
+                    <a
+                      href="/guides/payout-percentage-and-expectancy"
+                      onClick={(e) => handleNavClick(e, '/guides/payout-percentage-and-expectancy')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Payout & Expectancy Math
+                    </a>
+                    <a
+                      href="/guides/martingale-in-binary-options"
+                      onClick={(e) => handleNavClick(e, '/guides/martingale-in-binary-options')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Martingale Drawdown Math
+                    </a>
+                  </div>
+
+                  {/* Col 3: Comparisons & Technical */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-mono uppercase font-bold text-cyan-400 tracking-wider block border-b border-slate-800 pb-1.5 mb-2">
+                      Buyer Guides & Tech
+                    </span>
+                    <a
+                      href="/comparisons/quotex-trading-bots"
+                      onClick={(e) => handleNavClick(e, '/comparisons/quotex-trading-bots')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Bot Comparison Guide 2026
+                    </a>
+                    <a
+                      href="/comparisons/free-vs-paid-quotex-bots"
+                      onClick={(e) => handleNavClick(e, '/comparisons/free-vs-paid-quotex-bots')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Free vs Paid Quotex Bots
+                    </a>
+                    <a
+                      href="/comparisons/quotex-bot-vs-browser-extension"
+                      onClick={(e) => handleNavClick(e, '/comparisons/quotex-bot-vs-browser-extension')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      Desktop vs Chrome Extension
+                    </a>
+                    <a
+                      href="/technical/qbot2-architecture"
+                      onClick={(e) => handleNavClick(e, '/technical/qbot2-architecture')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      QBot2 System Architecture
+                    </a>
+                    <a
+                      href="/guides/quotex-bot-risks"
+                      onClick={(e) => handleNavClick(e, '/guides/quotex-bot-risks')}
+                      className="block p-1.5 rounded-lg hover:bg-amber-950/40 text-amber-300 font-semibold transition-colors"
+                    >
+                      Platform Rules & Bot Risks
+                    </a>
+                    <a
+                      href="/about"
+                      onClick={(e) => handleNavClick(e, '/about')}
+                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                    >
+                      About Our Engineering Team
+                    </a>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                  <span>Explore all 37 guides, technical blueprints & research topics</span>
+                  <button
+                    onClick={() => scrollToSection('algo-knowledge-base')}
+                    className="text-cyan-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    Open Knowledge Navigator &rarr;
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -349,11 +465,32 @@ export const Navbar: React.FC<NavbarProps> = ({
             Pricing Plans
           </a>
           <a
+            href="/comparisons/quotex-trading-bots"
+            onClick={(e) => handleNavClick(e, '/comparisons/quotex-trading-bots')}
+            className="block text-sm font-semibold text-cyan-300 py-1.5"
+          >
+            Bot Comparisons 2026
+          </a>
+          <a
+            href="/guides/quotex-bot-risks"
+            onClick={(e) => handleNavClick(e, '/guides/quotex-bot-risks')}
+            className="block text-sm font-semibold text-amber-300 py-1.5"
+          >
+            Broker Rules & Bot Risks
+          </a>
+          <a
             href="/quotex-bot-guide"
             onClick={(e) => handleNavClick(e, '/quotex-bot-guide')}
             className="block text-sm font-semibold text-slate-200 py-1.5"
           >
             Setup Guide & Docs
+          </a>
+          <a
+            href="/about"
+            onClick={(e) => handleNavClick(e, '/about')}
+            className="block text-sm font-semibold text-slate-300 py-1.5"
+          >
+            About AlgoTraders
           </a>
 
           <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">

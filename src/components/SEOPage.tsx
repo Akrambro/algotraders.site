@@ -105,11 +105,13 @@ export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNaviga
         </header>
 
         {/* Third-Party & Independent Non-Affiliation Disclosure */}
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 flex items-start gap-3">
-          <ShieldAlert className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong className="text-slate-200 font-semibold">{SITE_BRAND} Disclaimer:</strong>{' '}
-            {SITE_BRAND} is an independent algorithmic software tool provider. We are not affiliated with, endorsed by, sponsored by, or formally connected to Quotex, Awesome Ltd, or any binary options brokerage. All trademarks and brand names belong to their respective owners.
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-2">
+          <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase tracking-wider text-[11px] font-mono">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span>Independent Software & Broker Platform Notice</span>
+          </div>
+          <p className="leading-relaxed text-slate-400">
+            <strong className="text-slate-200">{SITE_BRAND}</strong> is an independent software tool developer. We are not affiliated with, endorsed by, sponsored by, or connected to Quotex, Awesome Ltd, or any binary options broker. Quotex’s published Rules of Trading Operations state that using automated mechanisms or specialized software without direct client participation is prohibited and can trigger automatic violation detection. Traders must independently evaluate broker agreements and assume all trading risk.
           </p>
         </div>
 
@@ -137,8 +139,35 @@ export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNaviga
                 ))}
               </div>
 
+              {section.tableData && (
+                <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80 my-4">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-900/90 text-cyan-300 font-mono">
+                        {section.tableData.headers.map((h, hIdx) => (
+                          <th key={hIdx} className="p-3 sm:p-4 font-semibold whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                      {section.tableData.rows.map((row, rIdx) => (
+                        <tr key={rIdx} className="hover:bg-slate-900/40 transition-colors">
+                          {row.map((cell, cIdx) => (
+                            <td key={cIdx} className="p-3 sm:p-4 align-top font-medium">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               {section.bulletPoints && section.bulletPoints.length > 0 && (
-                <div className="pt-3">
+                <div className="pt-2">
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {section.bulletPoints.map((bp, bIdx) => (
                       <li
@@ -150,6 +179,12 @@ export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNaviga
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {section.callout && (
+                <div className="p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-xs sm:text-sm text-cyan-200">
+                  {section.callout}
                 </div>
               )}
             </section>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Mail, Lock, ShieldAlert, BookOpen } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, ShieldAlert, BookOpen, Layers, Cpu, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
 import { SITE_BRAND } from '../seo/seo-data.ts';
@@ -43,15 +43,24 @@ export const Footer: React.FC<FooterProps> = ({
               <BrandLogo size="md" />
             </div>
             <p className="text-slate-400 leading-relaxed text-xs">
-              Algorithmic execution software for Quotex binary options. High-speed Windows PC background daemon paired with an Android companion app.
+              Independent algorithmic execution software for Quotex binary options. Windows background daemon paired with an Android mobile companion.
             </p>
             <div className="pt-2 flex items-center gap-2 text-slate-500">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>TLS 1.3 256-bit Encrypted Licensing</span>
+              <span>TLS 1.3 Hardware-Bound Licensing</span>
+            </div>
+            <div className="pt-1">
+              <a
+                href="/about"
+                onClick={(e) => handleLinkClick(e, '/about')}
+                className="text-cyan-400 hover:underline font-semibold text-xs"
+              >
+                About Our Engineering Team &rarr;
+              </a>
             </div>
           </div>
 
-          {/* Col 2: SEO Landing Pages & Guides */}
+          {/* Col 2: Trading Bots */}
           <div className="space-y-3">
             <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
@@ -78,11 +87,20 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <a
-                  href="/quotex-trade-analysis"
-                  onClick={(e) => handleLinkClick(e, '/quotex-trade-analysis')}
+                  href="/quotex-bot-windows"
+                  onClick={(e) => handleLinkClick(e, '/quotex-bot-windows')}
                   className="hover:text-cyan-400 transition-colors"
                 >
-                  Trade Analysis Logic
+                  Windows 10/11 Bot
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/quotex-bot-android"
+                  onClick={(e) => handleLinkClick(e, '/quotex-bot-android')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Android Companion App
                 </a>
               </li>
               <li>
@@ -94,66 +112,184 @@ export const Footer: React.FC<FooterProps> = ({
                   OTC Weekend Algorithm
                 </a>
               </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Documentation & Features */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono">
-              Resources
-            </h4>
-            <ul className="space-y-2">
               <li>
                 <a
-                  href="/quotex-bot-features"
-                  onClick={(e) => handleLinkClick(e, '/quotex-bot-features')}
+                  href="/quotex-bot-demo"
+                  onClick={(e) => handleLinkClick(e, '/quotex-bot-demo')}
                   className="hover:text-cyan-400 transition-colors"
                 >
-                  Features & Specifications
+                  Practice Account Setup
                 </a>
-              </li>
-              <li>
-                <a
-                  href="/quotex-bot-pricing"
-                  onClick={(e) => handleLinkClick(e, '/quotex-bot-pricing')}
-                  className="hover:text-cyan-400 transition-colors"
-                >
-                  Pricing & Licenses
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/quotex-bot-guide"
-                  onClick={(e) => handleLinkClick(e, '/quotex-bot-guide')}
-                  className="hover:text-cyan-400 transition-colors"
-                >
-                  Setup & Installation Guide
-                </a>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    if (onNavigate) onNavigate('/docs');
-                    else setCurrentView('docs');
-                  }}
-                  className="hover:text-cyan-400 transition-colors text-left"
-                >
-                  API Specifications
-                </button>
               </li>
             </ul>
           </div>
 
-          {/* Col 4: Legal & Regulatory */}
+          {/* Col 3: Strategy & Education Guides */}
           <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono">
-              Compliance
+            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Guides & Strategies</span>
             </h4>
             <ul className="space-y-2">
+              <li>
+                <a
+                  href="/guides/what-is-a-quotex-trading-bot"
+                  onClick={(e) => handleLinkClick(e, '/guides/what-is-a-quotex-trading-bot')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  What Is a Quotex Bot?
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/how-quotex-bot-automation-works"
+                  onClick={(e) => handleLinkClick(e, '/guides/how-quotex-bot-automation-works')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  How Automation Works
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/quotex-1-minute-strategy"
+                  onClick={(e) => handleLinkClick(e, '/guides/quotex-1-minute-strategy')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  1-Minute Strategy Guide
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/quotex-5-minute-strategy"
+                  onClick={(e) => handleLinkClick(e, '/guides/quotex-5-minute-strategy')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  5-Minute Strategy Guide
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/quotex-otc-strategy"
+                  onClick={(e) => handleLinkClick(e, '/guides/quotex-otc-strategy')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  OTC Strategy & Volatility
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/payout-percentage-and-expectancy"
+                  onClick={(e) => handleLinkClick(e, '/guides/payout-percentage-and-expectancy')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Payout & Expectancy Math
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/martingale-in-binary-options"
+                  onClick={(e) => handleLinkClick(e, '/guides/martingale-in-binary-options')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Martingale Risk Analysis
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 4: Comparisons & Tech Authority */}
+          <div className="space-y-3">
+            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Comparisons & Tech</span>
+            </h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="/comparisons/quotex-trading-bots"
+                  onClick={(e) => handleLinkClick(e, '/comparisons/quotex-trading-bots')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Best Quotex Bots Compared
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/comparisons/free-vs-paid-quotex-bots"
+                  onClick={(e) => handleLinkClick(e, '/comparisons/free-vs-paid-quotex-bots')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Free vs Paid Quotex Bots
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/comparisons/quotex-bot-vs-browser-extension"
+                  onClick={(e) => handleLinkClick(e, '/comparisons/quotex-bot-vs-browser-extension')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Desktop vs Chrome Extension
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/technical/qbot2-architecture"
+                  onClick={(e) => handleLinkClick(e, '/technical/qbot2-architecture')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  QBot2 System Architecture
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/technical/risk-engine"
+                  onClick={(e) => handleLinkClick(e, '/technical/risk-engine')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Risk Engine Circuit Breakers
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/changelog"
+                  onClick={(e) => handleLinkClick(e, '/changelog')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Software Changelog (v2.5.0)
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 5: Compliance & Support */}
+          <div className="space-y-3">
+            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <span>Risk & Support</span>
+            </h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="/guides/quotex-bot-risks"
+                  onClick={(e) => handleLinkClick(e, '/guides/quotex-bot-risks')}
+                  className="hover:text-amber-400 transition-colors text-amber-300 font-semibold"
+                >
+                  Platform Rules & Bot Risks
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/quotex-bot-faq"
+                  onClick={(e) => handleLinkClick(e, '/quotex-bot-faq')}
+                  className="hover:text-cyan-400 transition-colors"
+                >
+                  Frequently Asked Questions
+                </a>
+              </li>
               <li>
                 <button
                   onClick={() => openLegalModal('risk')}
-                  className="hover:text-amber-400 transition-colors text-amber-400/90 font-medium text-left"
+                  className="hover:text-amber-400 transition-colors text-amber-400/90 text-left cursor-pointer"
                 >
                   Statutory Risk Disclosure
                 </button>
@@ -161,7 +297,7 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => openLegalModal('terms')}
-                  className="hover:text-cyan-400 transition-colors text-left"
+                  className="hover:text-cyan-400 transition-colors text-left cursor-pointer"
                 >
                   Terms of Service
                 </button>
@@ -169,52 +305,15 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   onClick={() => openLegalModal('privacy')}
-                  className="hover:text-cyan-400 transition-colors text-left"
+                  className="hover:text-cyan-400 transition-colors text-left cursor-pointer"
                 >
                   Privacy & Data Policy
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => openLegalModal('refund')}
-                  className="hover:text-cyan-400 transition-colors text-left"
-                >
-                  14-Day Refund Policy
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 5: Account & Support */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold text-white tracking-wider font-mono">
-              Account & Support
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                {user ? (
-                  <button
-                    onClick={() => {
-                      if (onNavigate) onNavigate('/dashboard');
-                      else setCurrentView('dashboard');
-                    }}
-                    className="hover:text-cyan-400 transition-colors text-left"
-                  >
-                    Customer Dashboard ({user.email})
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openAuthModal('signin')}
-                    className="hover:text-cyan-400 transition-colors text-left"
-                  >
-                    Customer Sign In
-                  </button>
-                )}
-              </li>
-              <li>
                 <a
                   href="mailto:algotraders.site@zohomail.in"
-                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 pt-1"
                 >
                   <Mail className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">algotraders.site@zohomail.in</span>
@@ -227,7 +326,7 @@ export const Footer: React.FC<FooterProps> = ({
                     else setCurrentView('admin');
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                   }}
-                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5 text-slate-400 hover:underline cursor-pointer"
+                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5 text-slate-400 hover:underline cursor-pointer pt-1"
                   title="Admin Portal (Restricted Access)"
                 >
                   <Lock className="w-3.5 h-3.5 text-purple-400 shrink-0" />
@@ -238,13 +337,16 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
 
-        {/* Third-Party Non-Affiliation Disclaimer */}
-        <div className="mt-12 pt-6 border-t border-slate-900 text-[11px] text-slate-500 space-y-2 leading-relaxed">
+        {/* Third-Party Non-Affiliation & Quotex Rules Notice */}
+        <div className="mt-12 pt-6 border-t border-slate-900 text-[11px] text-slate-500 space-y-2.5 leading-relaxed">
           <p>
-            <strong className="text-slate-400">Non-Affiliation Notice:</strong> {SITE_BRAND} is an independent software development project. {SITE_BRAND} is not affiliated with, endorsed by, sponsored by, or partner with Quotex, Awesome Ltd, or any binary options broker. Quotex is a registered trademark of its respective owner.
+            <strong className="text-slate-300">Third-Party Non-Affiliation Disclosure:</strong> {SITE_BRAND} is an independent software development provider. {SITE_BRAND} is not affiliated with, endorsed by, sponsored by, or partner with Quotex, Awesome Ltd, or any binary options broker. Quotex is a registered trademark of its respective owner.
           </p>
           <p>
-            <strong className="text-amber-400/90">Risk Warning:</strong> Binary options trading involves significant financial risk and is not suitable for all investors. You may lose all or more of your initial investment. Software tools do not guarantee profits.
+            <strong className="text-amber-400">Quotex Trading Rules Notice:</strong> Quotex’s published Rules of Trading Operations state that creating, selecting, or using automated mechanisms, algorithms, or specialized software that allows operations without direct client participation is prohibited, and automated trading software can trigger automatic violation detection. Traders must independently evaluate broker agreements and assume all trading risk.
+          </p>
+          <p>
+            <strong className="text-amber-400/90">Statutory Risk Warning:</strong> Binary options trading involves significant financial risk and can result in the total loss of invested capital. Software tools assist with automated rule execution but cannot eliminate market risk or guarantee profitability. Never trade with money you cannot afford to lose.
           </p>
         </div>
 
@@ -253,7 +355,11 @@ export const Footer: React.FC<FooterProps> = ({
             &copy; {new Date().getFullYear()} {SITE_BRAND}. All rights reserved.
           </div>
           <div className="flex items-center gap-4">
-            <span>Server: Asia-Southeast1</span>
+            <a href="/about" onClick={(e) => handleLinkClick(e, '/about')} className="hover:text-slate-400">About Us</a>
+            <span>•</span>
+            <a href="/changelog" onClick={(e) => handleLinkClick(e, '/changelog')} className="hover:text-slate-400">Changelog</a>
+            <span>•</span>
+            <a href="/quotex-bot-pricing" onClick={(e) => handleLinkClick(e, '/quotex-bot-pricing')} className="hover:text-slate-400">Pricing</a>
             <span>•</span>
             <span>Version: 2.5.0 Production</span>
           </div>
