@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Download, Monitor, Smartphone, Loader2, BookOpen, CheckCircle2, CloudDownload, HardDrive} from 'lucide-react';
+import {Download, Monitor, Smartphone, Loader2, BookOpen, CheckCircle2, CloudDownload, HardDrive, Lock, ArrowRight} from 'lucide-react';
 import {useAuth} from '../context/AuthContext.tsx';
 import type {DownloadItem} from '../types.ts';
 
@@ -85,85 +85,125 @@ export function DownloadsSection({onGoToPricing,onOpenDocs}: {onGoToPricing:()=>
 
     {!token && <p className="text-sm text-slate-400">Sign in to view your downloads.</p>}
     {token && !data && !message && <Loader2 className="h-6 w-6 animate-spin text-cyan-400"/>}
-    {data && !data.isEntitled && (
-      <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p className="text-xs text-amber-300">
-          Payment verification or active subscription required to unlock software downloads.
-        </p>
-        <button onClick={onGoToPricing} className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-bold text-slate-950 cursor-pointer transition-colors">
-          Choose a subscription / renew
-        </button>
+
+    {data && !data.isEntitled ? (
+      <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-slate-950/80 p-6 sm:p-8 text-center space-y-6">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <Lock className="w-8 h-8" />
+        </div>
+
+        <div className="max-w-xl mx-auto space-y-2">
+          <h3 className="text-xl font-bold text-white">
+            Software Downloads Locked — Paid License Required
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            The licensed QBot2 Windows Backend ZIP and Android Companion APK are exclusive to active paying subscribers. Complete your subscription payment to unlock instant software downloads and your PC activation key.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-left pt-2 pb-2">
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-mono font-bold text-cyan-400 block mb-1">STEP 1</span>
+            <p className="text-xs font-bold text-white">Choose a Plan</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Select Monthly (₹4,999) or Annual Pro (₹49,999).</p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-mono font-bold text-amber-400 block mb-1">STEP 2</span>
+            <p className="text-xs font-bold text-white">Scan UPI QR & Pay</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Scan via PhonePe, GPay, or Paytm with your Order ID.</p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-mono font-bold text-emerald-400 block mb-1">STEP 3</span>
+            <p className="text-xs font-bold text-white">Instant Unlock</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Admin verifies payment & unlocks downloads + license.</p>
+          </div>
+        </div>
+
+        <div>
+          <button
+            onClick={onGoToPricing}
+            className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-bold flex items-center gap-2 mx-auto shadow-lg shadow-amber-500/20 cursor-pointer transition-all"
+          >
+            <span>Scan QR Code & Unlock Downloads</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <p className="text-[11px] text-slate-400 mt-2">
+            Already paid? Send your UTR / screenshot to <span className="text-cyan-300 font-mono">algotraders.site@zohomail.in</span> for verification.
+          </p>
+        </div>
       </div>
-    )}
-
-    <div className="grid gap-5 md:grid-cols-2">
-      {data?.downloads.map(item=>(
-        <article key={item.id} className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 flex flex-col justify-between hover:border-slate-700 transition-colors">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center">
-                {item.platform==='windows'?<Monitor className="h-5 w-5 text-cyan-400"/>:<Smartphone className="h-5 w-5 text-purple-400"/>}
-              </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 border border-slate-800 flex items-center gap-1">
-                <HardDrive className="w-3 h-3 text-cyan-400" />
-                {item.size || '50+ MB'}
-              </span>
-            </div>
-
-            <h3 className="mt-3 font-bold text-white text-base">{item.title}</h3>
-            <p className="text-xs font-mono text-cyan-400 mt-0.5">Version {item.version} • {item.filename}</p>
-
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-              {item.platform==='windows'
-                ?'Windows 10/11 x64. Extract the entire ZIP to your PC; keep all backend executables together.'
-                :'Android companion app. The licensed Windows PC must remain running on your trusted network.'}
-            </p>
-
-            <div className="my-3 pt-3 border-t border-slate-800/80">
-              <p className="text-[11px] font-semibold text-slate-300 mb-1.5">Package Highlights:</p>
-              <ul className="list-disc space-y-1 pl-4 text-[11px] text-slate-400">
-                {item.changelog.map(line=><li key={line}>{line}</li>)}
-              </ul>
-            </div>
-
-            {item.sha256 && (
-              <p className="mb-3 break-all font-mono text-[9px] text-slate-500">
-                SHA-256: {item.sha256}
-              </p>
-            )}
-          </div>
-
-          <div className="pt-3 border-t border-slate-800/60">
-            <button
-              onClick={()=>download(item)}
-              disabled={!data.isEntitled || !item.downloadUrl || Boolean(busy)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-4 py-3 text-xs font-bold text-slate-950 disabled:opacity-40 disabled:hover:bg-cyan-500 cursor-pointer transition-colors shadow-lg shadow-cyan-950/50"
-            >
-              {busy===item.id?(
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin"/>
-                  <span>Streaming file (50+ MB)...</span>
-                </>
-              ):(
-                <>
-                  <Download className="h-4 w-4"/>
-                  <span>
-                    {!data.isEntitled
-                      ?'Active subscription required'
-                      :!item.downloadUrl
-                      ?'Release upload pending'
-                      :`Download ${item.platform==='windows'?'Windows ZIP':'Android APK'}`}
+    ) : (
+      data && (
+        <div className="grid gap-5 md:grid-cols-2">
+          {data.downloads.map(item=>(
+            <article key={item.id} className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 flex flex-col justify-between hover:border-slate-700 transition-colors">
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center">
+                    {item.platform==='windows'?<Monitor className="h-5 w-5 text-cyan-400"/>:<Smartphone className="h-5 w-5 text-purple-400"/>}
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 border border-slate-800 flex items-center gap-1">
+                    <HardDrive className="w-3 h-3 text-cyan-400" />
+                    {item.size || '50+ MB'}
                   </span>
-                </>
-              )}
-            </button>
-            <p className="text-[10px] text-center text-slate-500 mt-1.5">
-              Direct download on this page • No external redirects
-            </p>
-          </div>
-        </article>
-      ))}
-    </div>
+                </div>
+
+                <h3 className="mt-3 font-bold text-white text-base">{item.title}</h3>
+                <p className="text-xs font-mono text-cyan-400 mt-0.5">Version {item.version} • {item.filename}</p>
+
+                <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                  {item.platform==='windows'
+                    ?'Windows 10/11 x64. Extract the entire ZIP to your PC; keep all backend executables together.'
+                    :'Android companion app. The licensed Windows PC must remain running on your trusted network.'}
+                </p>
+
+                <div className="my-3 pt-3 border-t border-slate-800/80">
+                  <p className="text-[11px] font-semibold text-slate-300 mb-1.5">Package Highlights:</p>
+                  <ul className="list-disc space-y-1 pl-4 text-[11px] text-slate-400">
+                    {item.changelog.map(line=><li key={line}>{line}</li>)}
+                  </ul>
+                </div>
+
+                {item.sha256 && (
+                  <p className="mb-3 break-all font-mono text-[9px] text-slate-500">
+                    SHA-256: {item.sha256}
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-800/60">
+                <button
+                  onClick={()=>download(item)}
+                  disabled={!data.isEntitled || !item.downloadUrl || Boolean(busy)}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-4 py-3 text-xs font-bold text-slate-950 disabled:opacity-40 disabled:hover:bg-cyan-500 cursor-pointer transition-colors shadow-lg shadow-cyan-950/50"
+                >
+                  {busy===item.id?(
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin"/>
+                      <span>Streaming file (50+ MB)...</span>
+                    </>
+                  ):(
+                    <>
+                      <Download className="h-4 w-4"/>
+                      <span>
+                        {!data.isEntitled
+                          ?'Active subscription required'
+                          :!item.downloadUrl
+                          ?'Release upload pending'
+                          :`Download ${item.platform==='windows'?'Windows ZIP':'Android APK'}`}
+                      </span>
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-slate-500 mt-1.5">
+                  Direct download on this page • No external redirects
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )
+    )}
 
     <button onClick={onOpenDocs} className="flex items-center gap-2 text-xs font-medium text-cyan-400 hover:text-cyan-300 cursor-pointer transition-colors pt-2">
       <BookOpen className="h-4 w-4"/>

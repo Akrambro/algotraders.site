@@ -296,12 +296,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Pricing
           </a>
-          <button
-            onClick={() => scrollToSection('faq')}
-            className="text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            FAQ
-          </button>
         </nav>
 
         {/* Right Action & Profile Button */}

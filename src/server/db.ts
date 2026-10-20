@@ -263,49 +263,50 @@ export const db = {
 
     if (client) {
       try {
-        // Try stored procedure first
-        try {
-          const res = await result(client.rpc('register_user', {
-            p_email: cleanEmail,
-            p_password_hash: data.passwordHash,
-            p_name: cleanName
-          }));
-          if (res?.user) {
-            const u = safeUser(res.user);
-            memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
-            if (res.subscription) memory.subscriptions.set(u.id, camel(res.subscription));
-            return u;
-          }
-        } catch {
-          // Direct table insert fallback
-          const userRow = await result(client.from('users').insert({
-            email: cleanEmail,
-            password_hash: data.passwordHash,
-            name: cleanName,
-            role: userRole,
-            is_verified: true,
-            two_factor_enabled: false
-          }).select().single());
+        // Direct table insert (do not call old register_user RPC which assigned free active subscriptions)
+        const userRow = await result(client.from('users').insert({
+          email: cleanEmail,
+          password_hash: data.passwordHash,
+          name: cleanName,
+          role: userRole,
+          is_verified: true,
+          two_factor_enabled: false
+        }).select().single());
 
-          if (userRow) {
-            const u = safeUser(userRow);
-            memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
-            
-            // Create subscription record
+        if (userRow) {
+          const u = safeUser(userRow);
+          memory.users.set(u.id, { ...u, passwordHash: data.passwordHash });
+          
+          // Create INACTIVE subscription record - new signups DO NOT get free active subscriptions!
+          try {
             const subRow = await result(client.from('subscriptions').insert({
               user_id: u.id,
               plan_id: 'monthly',
-              status: 'active',
+              status: 'inactive',
               provider: 'manual',
               current_period_start: new Date().toISOString(),
-              current_period_end: new Date(Date.now() + 30 * oneDayMs).toISOString(),
+              current_period_end: new Date().toISOString(),
               cancel_at_period_end: false,
-              max_devices: 1
+              max_devices: 0
             }).select().single());
             if (subRow) memory.subscriptions.set(u.id, camel(subRow));
-
-            return u;
+          } catch {
+            // Memory record fallback
+            memory.subscriptions.set(u.id, {
+              id: 'sub_' + u.id,
+              userId: u.id,
+              planId: 'monthly',
+              status: 'inactive',
+              provider: 'manual',
+              currentPeriodStart: new Date().toISOString(),
+              currentPeriodEnd: new Date().toISOString(),
+              cancelAtPeriodEnd: false,
+              maxDevices: 0,
+              createdAt: new Date().toISOString()
+            });
           }
+
+          return u;
         }
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase createUser fallback:', err.message);
@@ -325,16 +326,17 @@ export const db = {
     };
     memory.users.set(id, user);
 
+    // New signups require paid subscription verification before downloads or licenses activate
     const subscription: Subscription = {
       id: 'sub_' + id,
       userId: id,
       planId: 'monthly',
-      status: 'active',
+      status: 'inactive',
       provider: 'manual',
       currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + 30 * oneDayMs).toISOString(),
+      currentPeriodEnd: new Date().toISOString(),
       cancelAtPeriodEnd: false,
-      maxDevices: 1,
+      maxDevices: 0,
       createdAt: new Date().toISOString()
     };
     memory.subscriptions.set(id, subscription);
@@ -403,15 +405,59 @@ export const db = {
 
   async getSubscription(userId: string): Promise<Subscription | null> {
     const client = database();
+    let sub: Subscription | null = null;
     if (client) {
       try {
         const row = await result(client.from('subscriptions').select('*').eq('user_id', userId).maybeSingle());
-        if (row) return camel(row);
+        if (row) sub = camel(row);
       } catch (err: any) {
         if (!isSchemaError(err)) console.warn('[DB] Supabase getSubscription fallback:', err.message);
       }
     }
-    return memory.subscriptions.get(userId) || null;
+    if (!sub) {
+      sub = memory.subscriptions.get(userId) || null;
+    }
+
+    // SANITY GUARD: Non-admin users without a verified payment or promo grant MUST NOT be active
+    if (sub && sub.status === 'active') {
+      const user = memory.users.get(userId) || (client ? await this.findUserById(userId) : null);
+      if (user && user.role === 'customer') {
+        const isSeedCustomer = ['usr_cust_rajesh', 'usr_cust_vikram', 'usr_cust_ananya'].includes(userId);
+        if (!isSeedCustomer) {
+          const memPayments = Array.from(memory.manualPayments.values());
+          let hasVerified = memPayments.some(
+            p => (p.userId === user.id || p.email?.toLowerCase() === user.email?.toLowerCase()) && p.status === 'verified'
+          );
+          if (!hasVerified && client) {
+            try {
+              const pRow = await result(client.from('manual_payments').select('id').or(`user_id.eq.${user.id},email.ilike.${user.email}`).eq('status', 'verified').limit(1).maybeSingle());
+              if (pRow) hasVerified = true;
+            } catch {}
+          }
+          const hasPromo = memory.auditLogs.some(
+            l => l.userId === user.id && l.action === 'PROMO_GRANTED'
+          );
+
+          if (!hasVerified && !hasPromo) {
+            sub.status = 'inactive';
+            sub.planId = 'monthly';
+            sub.currentPeriodEnd = new Date().toISOString();
+            memory.subscriptions.set(userId, sub);
+            if (client) {
+              Promise.resolve(
+                client.from('subscriptions').update({
+                  status: 'inactive',
+                  plan_id: 'monthly',
+                  current_period_end: new Date().toISOString()
+                }).eq('user_id', userId)
+              ).catch(() => {});
+            }
+          }
+        }
+      }
+    }
+
+    return sub;
   },
 
   async getAllSubscriptions(): Promise<Subscription[]> {

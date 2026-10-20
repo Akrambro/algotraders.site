@@ -28,7 +28,8 @@ import {
   BadgeCheck,
   Save,
   Info,
-  Fingerprint
+  Fingerprint,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ActivationHelp } from './ActivationHelp.tsx';
@@ -501,6 +502,12 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         >
           <Download className="w-4 h-4" />
           <span>Software Downloads</span>
+          {!hasActiveSubscription(subscription) && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-mono font-semibold">
+              <Lock className="w-3 h-3" />
+              LOCKED
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab('settings')}

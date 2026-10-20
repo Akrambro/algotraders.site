@@ -28,7 +28,7 @@ export function mockAccountDatabase(pg: PGlite, store: LicenseStore) {
       } catch {
         const u = await one('INSERT INTO users(email,password_hash,name,role,is_verified) VALUES($1,$2,$3,$4,true) RETURNING *',
           [data.email.trim().toLowerCase(), data.passwordHash, data.name || 'Test user', data.role || 'customer']);
-        await rows('INSERT INTO subscriptions(user_id,plan_id,status) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING', [u.id, 'monthly', 'active']);
+        await rows('INSERT INTO subscriptions(user_id,plan_id,status) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING', [u.id, 'none', 'inactive']);
         return safe(u);
       }
     }),

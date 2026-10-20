@@ -41,15 +41,15 @@ CREATE INDEX IF NOT EXISTS users_role_idx ON public.users(role);
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   user_id TEXT NOT NULL,
-  plan_id TEXT NOT NULL DEFAULT 'monthly',
-  status TEXT NOT NULL DEFAULT 'active',
+  plan_id TEXT NOT NULL DEFAULT 'none',
+  status TEXT NOT NULL DEFAULT 'inactive',
   provider TEXT NOT NULL DEFAULT 'manual',
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   current_period_start TIMESTAMPTZ NOT NULL DEFAULT now(),
-  current_period_end TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
+  current_period_end TIMESTAMPTZ NOT NULL DEFAULT now(),
   cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
-  max_devices INTEGER NOT NULL DEFAULT 1,
+  max_devices INTEGER NOT NULL DEFAULT 0,
   payment_method_last4 TEXT,
   payment_method_brand TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -320,8 +320,8 @@ BEGIN
   VALUES (lower(trim(p_email)), p_password_hash, trim(p_name), 'customer', true)
   RETURNING * INTO u;
 
-  INSERT INTO subscriptions (user_id, plan_id, status, current_period_end)
-  VALUES (u.id, 'monthly', 'active', now() + interval '30 days')
+  INSERT INTO subscriptions (user_id, plan_id, status, current_period_start, current_period_end, max_devices)
+  VALUES (u.id, 'none', 'inactive', now(), now(), 0)
   RETURNING * INTO sub;
 
   RETURN jsonb_build_object(

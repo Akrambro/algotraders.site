@@ -46,9 +46,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onSuccess();
         onClose();
       } else if (mode === 'signup') {
-        await register(email, password, name);
-        onSuccess();
-        onClose();
+        const resp = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to register.');
+        }
+        setSuccessMessage('Account created successfully! Please sign in with your credentials below.');
+        setMode('signin');
+        setLoading(false);
+        return;
       } else if (mode === '2fa') {
         await login(email, password, twoFactorCode);
         onSuccess();
