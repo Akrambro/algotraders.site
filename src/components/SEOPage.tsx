@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { SEOPageData, SITE_BRAND } from '../seo/seo-data.ts';
 import { SEOHead } from './SEOHead.tsx';
+import { PaymentQRModal } from './PaymentQRModal.tsx';
 
 interface SEOPageProps {
   pageData: SEOPageData;
@@ -25,6 +26,7 @@ interface SEOPageProps {
 
 export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNavigate }) => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [qrModalOpen, setQrModalOpen] = useState<boolean>(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -89,7 +91,13 @@ export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNaviga
           {/* Quick CTA Buttons */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <button
-              onClick={() => onOpenAuth('signup')}
+              onClick={() => {
+                if (pageData.slug === 'quotex-bot-pricing') {
+                  setQrModalOpen(true);
+                } else {
+                  onNavigate('/quotex-bot-pricing');
+                }
+              }}
               className="px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
             >
               <span>Get QBot2 Software License</span>
@@ -274,6 +282,12 @@ export const SEOPage: React.FC<SEOPageProps> = ({ pageData, onOpenAuth, onNaviga
           </p>
         </div>
       </div>
+
+      <PaymentQRModal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        initialPlan="annual"
+      />
     </article>
   );
 };

@@ -26,6 +26,7 @@ interface NavbarProps {
   openAuthModal: (mode: 'signin' | 'signup') => void;
   openLegalModal: (type: 'terms' | 'privacy' | 'refund' | 'risk') => void;
   onNavigate?: (path: string) => void;
+  currentPath?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,7 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setCurrentView,
   openAuthModal,
   openLegalModal,
-  onNavigate
+  onNavigate,
+  currentPath = '/'
 }) => {
   const { user, subscription, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,19 +56,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const scrollToSection = (sectionId: string) => {
-    if (currentView !== 'landing') {
+    if (currentPath !== '/' || currentView !== 'landing') {
       if (onNavigate) {
         onNavigate('/');
         setTimeout(() => {
           const el = document.getElementById(sectionId);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        }, 200);
       } else {
-        setCurrentView('landing');
+        window.location.pathname = '/';
         setTimeout(() => {
           const el = document.getElementById(sectionId);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
+        }, 200);
       }
     } else {
       const el = document.getElementById(sectionId);
@@ -93,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             href="/"
             onClick={(e) => handleNavClick(e, '/')}
             className={`text-sm font-medium transition-colors ${
-              currentView === 'landing' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+              currentPath === '/' && currentView === 'landing' ? 'text-cyan-400 font-bold' : 'text-slate-300 hover:text-white'
             }`}
           >
             Overview
@@ -136,42 +138,66 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <a
                       href="/quotex-trading-bot"
                       onClick={(e) => handleNavClick(e, '/quotex-trading-bot')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-trading-bot'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Quotex Trading Bot
                     </a>
                     <a
                       href="/quotex-auto-trading-bot"
                       onClick={(e) => handleNavClick(e, '/quotex-auto-trading-bot')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-auto-trading-bot'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Auto Trading Rules
                     </a>
                     <a
                       href="/quotex-bot-windows"
                       onClick={(e) => handleNavClick(e, '/quotex-bot-windows')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-bot-windows'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Windows 10/11 Daemon
                     </a>
                     <a
                       href="/quotex-bot-android"
                       onClick={(e) => handleNavClick(e, '/quotex-bot-android')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-bot-android'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Android Companion App
                     </a>
                     <a
                       href="/quotex-bot-demo"
                       onClick={(e) => handleNavClick(e, '/quotex-bot-demo')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-bot-demo'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Practice Account Testing
                     </a>
                     <a
                       href="/quotex-bot-risk-controls"
                       onClick={(e) => handleNavClick(e, '/quotex-bot-risk-controls')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-bot-risk-controls'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Risk Controls & Stops
                     </a>
@@ -185,42 +211,66 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <a
                       href="/quotex-trade-analysis"
                       onClick={(e) => handleNavClick(e, '/quotex-trade-analysis')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-trade-analysis'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Trade Analysis Confluence
                     </a>
                     <a
                       href="/quotex-otc-trading-bot"
                       onClick={(e) => handleNavClick(e, '/quotex-otc-trading-bot')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/quotex-otc-trading-bot'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       OTC Weekend Algorithm
                     </a>
                     <a
                       href="/guides/quotex-1-minute-strategy"
                       onClick={(e) => handleNavClick(e, '/guides/quotex-1-minute-strategy')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/guides/quotex-1-minute-strategy'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       1-Minute Strategy Guide
                     </a>
                     <a
                       href="/guides/quotex-5-minute-strategy"
                       onClick={(e) => handleNavClick(e, '/guides/quotex-5-minute-strategy')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/guides/quotex-5-minute-strategy'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       5-Minute Strategy Guide
                     </a>
                     <a
                       href="/guides/payout-percentage-and-expectancy"
                       onClick={(e) => handleNavClick(e, '/guides/payout-percentage-and-expectancy')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/guides/payout-percentage-and-expectancy'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Payout & Expectancy Math
                     </a>
                     <a
                       href="/guides/martingale-in-binary-options"
                       onClick={(e) => handleNavClick(e, '/guides/martingale-in-binary-options')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/guides/martingale-in-binary-options'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Martingale Drawdown Math
                     </a>
@@ -234,42 +284,66 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <a
                       href="/comparisons/quotex-trading-bots"
                       onClick={(e) => handleNavClick(e, '/comparisons/quotex-trading-bots')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/comparisons/quotex-trading-bots'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Bot Comparison Guide 2026
                     </a>
                     <a
                       href="/comparisons/free-vs-paid-quotex-bots"
                       onClick={(e) => handleNavClick(e, '/comparisons/free-vs-paid-quotex-bots')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/comparisons/free-vs-paid-quotex-bots'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Free vs Paid Quotex Bots
                     </a>
                     <a
                       href="/comparisons/quotex-bot-vs-browser-extension"
                       onClick={(e) => handleNavClick(e, '/comparisons/quotex-bot-vs-browser-extension')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/comparisons/quotex-bot-vs-browser-extension'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       Desktop vs Chrome Extension
                     </a>
                     <a
                       href="/technical/qbot2-architecture"
                       onClick={(e) => handleNavClick(e, '/technical/qbot2-architecture')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/technical/qbot2-architecture'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       QBot2 System Architecture
                     </a>
                     <a
                       href="/guides/quotex-bot-risks"
                       onClick={(e) => handleNavClick(e, '/guides/quotex-bot-risks')}
-                      className="block p-1.5 rounded-lg hover:bg-amber-950/40 text-amber-300 font-semibold transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/guides/quotex-bot-risks'
+                          ? 'bg-amber-900/40 text-amber-300 font-bold'
+                          : 'hover:bg-amber-950/40 text-amber-300 font-semibold'
+                      }`}
                     >
                       Platform Rules & Bot Risks
                     </a>
                     <a
                       href="/about"
                       onClick={(e) => handleNavClick(e, '/about')}
-                      className="block p-1.5 rounded-lg hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300 transition-colors"
+                      className={`block p-1.5 rounded-lg transition-colors ${
+                        currentPath === '/about'
+                          ? 'bg-slate-800 text-cyan-300 font-bold'
+                          : 'hover:bg-slate-800/80 font-semibold text-slate-200 hover:text-cyan-300'
+                      }`}
                     >
                       About Our Engineering Team
                     </a>
@@ -292,7 +366,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <a
             href="/quotex-bot-pricing"
             onClick={(e) => handleNavClick(e, '/quotex-bot-pricing')}
-            className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+            className={`text-sm font-medium transition-colors ${
+              currentPath === '/quotex-bot-pricing' ? 'text-cyan-400 font-bold' : 'text-slate-300 hover:text-white'
+            }`}
           >
             Pricing
           </a>

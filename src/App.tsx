@@ -177,6 +177,7 @@ function MainApp() {
         openAuthModal={openAuth}
         openLegalModal={(t) => setLegalModalType(t)}
         onNavigate={navigateTo}
+        currentPath={currentPath}
       />
 
       {/* Main Content Area */}
