@@ -43,6 +43,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           setLoading(false);
           return;
         }
+        setLoading(false);
         onSuccess();
         onClose();
       } else if (mode === 'signup') {
@@ -61,6 +62,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       } else if (mode === '2fa') {
         await login(email, password, twoFactorCode);
+        setLoading(false);
         onSuccess();
         onClose();
       } else if (mode === 'forgot') {
@@ -71,6 +73,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         });
         const data = await resp.json();
         setSuccessMessage(data.message || 'Password reset link sent.');
+        setLoading(false);
       } else if (mode === 'reset') {
         const resp = await fetch('/api/auth/reset-password', {
           method: 'POST',
@@ -80,10 +83,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error);
         setSuccessMessage(data.message || 'Password updated. You can now log in.');
+        setLoading(false);
         setTimeout(() => setMode('signin'), 1500);
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Authentication error.');
+      setLoading(false);
     } finally {
       setLoading(false);
     }

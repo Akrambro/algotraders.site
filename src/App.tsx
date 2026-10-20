@@ -279,7 +279,7 @@ function MainApp() {
         onClose={() => setAuthModalOpen(false)}
         onSuccess={() => {
           setAuthModalOpen(false);
-          navigateTo('/dashboard');
+          navigateTo('/');
         }}
       />
 
